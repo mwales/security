@@ -1,0 +1,120 @@
+('Problem is ', ['eowfhjz', 'oe', 'uoygzjhfw', 'gyou', 'gqg'])
+We determined answer is eowfhjz gyou gqg uoygzjhfw oe
+
+Judge: Correct! TWCTF{Charisma_School_Captain}
+('Problem is ', ['yayaayaaay', 'yyy', 'ayyyyya', 'y', 'yyy', 'ayaaayaay', 'yay', 'aaaa', 'ay', 'ayayyyyyayay'])
+We determined answer is yayaayaaay ayayyyyyayay yyy aaaa yyy yay ayyyyya y ayaaayaay ay
+
+Judge: Correct! 
+('Problem is ', ['r', 'tttrrrrtttt', 'tt', 'trrr', 'trttt', 'rrtr', 'trtrrt', 'trrtt', 'ttttrr', 'rtr'])
+We determined answer is tt rrtr trttt trrr r ttttrr trtrrt tttrrrrtttt rtr trrtt
+
+Judge: Correct! 
+('Problem is ', ['bpo', 'ltggopb', 't', 'xi', 'p', 'tltdtr', 'ixu', 'rtd', 'gg', 'pu'])
+We determined answer is bpo gg tltdtr ixu p pu xi rtd t ltggopb
+
+Judge: Correct! 
+('Problem is ', ['xxss', 'xxxssxx', 'xxsssssxxssxx', 'xx', 'ssxxxxssxx', 's', 'xxss', 'sxx', 'x', 'sss'])
+We determined answer is xxss xxxssxx xxsssssxxssxx xxss xx sss ssxxxxssxx x s sxx
+
+Judge: Correct! 
+('Problem is ', ['reww', 'na', 'j', 'erj', 'l', 't', 'f', 'f', 'ntan', 'nl'])
+We determined answer is na t nl f j reww erj f l ntan
+
+Judge: Correct! 
+('Problem is ', ['qwwwwwqww', 'wwwwqwwwwwqqwqqqqq', 'qwqqq', 'ww', 'qwqqw', 'q', 'qqqqqwq', 'q', 'qqw', 'qqqq'])
+We determined answer is wwwwqwwwwwqqwqqqqq qwqqw qqqq qqqqqwq qwqqq q qqw q qwwwwwqww ww
+
+Judge: Correct! 
+('Problem is ', ['m', 'boj', 'jo', 'h', 'bh', 'hb', 'b', 'ch', 'c', 'mycy'])
+We determined answer is boj h c bh mycy m hb ch jo b
+
+Judge: Correct! 
+('Problem is ', ['gegggeeegeggee', 'gegggeeg', 'eegggegegge', 'ege', 'eee', 'eeegee', 'ee', 'gg', 'egge', 'gggeg'])
+We determined answer is gegggeeg eee ee gg ege eegggegegge egge gegggeeegeggee eeegee gggeg
+
+Judge: Correct! 
+('Problem is ', ['wfw', 'fwfw', 'wfwffwfw', 'ffff', 'wwfwwwf', 'fffwfwfwffww', 'wfw', 'fwfffff', 'ffffff', 'wfww'])
+We determined answer is wfw wwfwwwf fwfw fwfffff ffff wfwffwfw ffffff fffwfwfwffww wfww wfw
+
+Judge: Correct! 
+('Problem is ', ['vyyv', 'yvyyvvvvv', 'yvvv', 'vv', 'y', 'vvvvvvyyvyvv', 'vvy', 'vvvyvvy', 'vv', 'vvyyvy'])
+We determined answer is vv yvyyvvvvv vvyyvy vvvyvvy vvy vv yvvv y vyyv vvvvvvyyvyvv
+
+Judge: Correct! 
+('Problem is ', ['l', 'z', 'v', 'y', 'jly', 'jau', 'z', 'uua', 'uue', 'rrveu'])
+We determined answer is z y l jau uue v rrveu uua jly z
+
+Judge: Correct! 
+('Problem is ', ['w', 'ddd', 'dwww', 'ddwddddwdd', 'dwwdddwdw', 'dw', 'wwwdwdw', 'wd', 'd', 'dddwwddddwd'])
+We determined answer is w ddwddddwdd d dwwdddwdw dwww wwwdwdw dddwwddddwd ddd wd dw
+
+Judge: Correct! 
+('Problem is ', ['q', 'qq', 'm', 'mmmqqmmmq', 'qqmmqmmqqm', 'mmqqqmm', 'mmqmm', 'mmmmq', 'mqqqmmqmmmm', 'qqm'])
+We determined answer is m qq mmqmm qqm mqqqmmqmmmm q mmmqqmmmq mmmmq mmqqqmm qqmmqmmqqm
+
+Judge: Correct! 
+('Problem is ', ['f', 'l', 'mfbpmjlaam', 'd', 'jmpb', 'bdmpm', 'b', 'm', 'm', 'aa'])
+We determined answer is mfbpmjlaam bdmpm d b m aa l jmpb f m
+
+Judge: Correct! 
+('Problem is ', ['lle', 'l', 'ell', 'l', 'ellee', 'lleelle', 'eeeeeeelle', 'elle', 'eeeeeeeleel', 'ellleelee'])
+We determined answer is lle l ellee eeeeeeeleel lleelle elle ellleelee eeeeeeelle l ell
+
+Judge: Correct! 
+('Problem is ', ['hohh', 'oooooh', 'ho', 'ohooo', 'ohhhoh', 'h', 'oohhohoohhhhh', 'o', 'ohohhhooh', 'ho'])
+We determined answer is ho ohhhoh ohooo oohhohoohhhhh h ho o hohh oooooh ohohhhooh
+
+Judge: Correct! 
+('Problem is ', ['uu', 'uuullluuuluulu', 'ul', 'u', 'luuulll', 'l', 'llllu', 'ulllll', 'uluu', 'luulluulul'])
+We determined answer is l uuullluuuluulu ulllll u luulluulul llllu uluu luuulll uu ul
+
+Judge: Correct! 
+('Problem is ', ['i', 'h', 'll', 'kxbhi', 'rq', 'hqru', 'bxku', 'wspl', 'psw', 'h'])
+We determined answer is i h bxku rq h wspl ll psw hqru kxbhi
+
+Judge: Correct! 
+('Problem is ', ['uva', 'xrn', 'v', 'a', 'sd', 'u', 'nrxdsuq', 'q', 'ua', 'a'])
+We determined answer is a uva nrxdsuq q u sd xrn a v ua
+
+Judge: Correct! 
+('Problem is ', ['xjjjx', 'jxxxjxxxxjxxxjx', 'jxj', 'j', 'j', 'jjxx', 'jxjj', 'jxxxxjxxxjxxjjxj', 'jxjxjjxx', 'xxx'])
+We determined answer is jxj xxx jxxxxjxxxjxxjjxj xjjjx jjxx j jxjj jxjxjjxx jxxxjxxxxjxxxjx j
+
+Judge: Correct! 
+('Problem is ', ['tkz', 'ud', 'xxd', 'vn', 't', 'u', 'gpg', 'x', 'xxtxnv', 'zkt'])
+We determined answer is tkz ud xxtxnv gpg vn x t xxd u zkt
+
+Judge: Correct! 
+('Problem is ', ['kkddkkdddkdkdkkkd', 'kdk', 'k', 'dkkdddkkkk', 'dkdkkkdkdkdddkkd', 'k', 'k', 'dd', 'd', 'k'])
+We determined answer is k dkdkkkdkdkdddkkd dkkdddkkkk k k k dd d kkddkkdddkdkdkkkd kdk
+
+Judge: Correct! 
+('Problem is ', ['gmmgmmgmgggmggmg', 'ggmgm', 'gmmg', 'g', 'mgmmgmmmgmgm', 'm', 'mg', 'gmm', 'mgmmgmg', 'mmm'])
+We determined answer is gmmg mgmmgmg mmm gmmgmmgmgggmggmg ggmgm mgmmgmmmgmgm mg m gmm g
+
+Judge: Correct! 
+('Problem is ', ['nxj', 'j', 'nh', 'hk', 'c', 'ch', 's', 'cx', 'khhcjx', 'jcxch'])
+We determined answer is khhcjx nh cx c j s jcxch nxj ch hk
+
+Judge: Correct! 
+('Problem is ', ['wwvwww', 'wwwwwvvv', 'vwv', 'v', 'w', 'wv', 'wv', 'wwwwvwwvwvwvwwvvvwwwwwvwvww', 'ww', 'ww'])
+We determined answer is w wwwwvwwvwvwvwwvvvwwwwwvwvww vwv wwwwwvvv ww v wv wv wwvwww ww
+
+Judge: Correct! 
+('Problem is ', ['hooooooh', 'ooo', 'h', 'ooohoohhohhooohh', 'h', 'oooh', 'hhooohhohhoohoo', 'oo', 'ho', 'oooo'])
+We determined answer is hooooooh ooo ooohoohhohhooohh h h hhooohhohhoohoo oooo ho oo oooh
+
+Judge: Correct! 
+('Problem is ', ['hqt', 'lrz', 'azrl', 'vaw', 'w', 'qh', 'awt', 'bf', 'blh', 'wavhl'])
+We determined answer is hqt w azrl wavhl bf blh vaw lrz awt qh
+
+Judge: Correct! 
+('Problem is ', ['mm', 'l', 'llmlmlmlmlmmlllmml', 'm', 'lmmmml', 'lmmmmllmmm', 'mlmlmlmlml', 'lm', 'llm', 'm'])
+We determined answer is mm m l lmmmml m llmlmlmlmlmmlllmml llm mlmlmlmlml lm lmmmmllmmm
+
+Judge: Correct! 
+('Problem is ', ['mkq', 'wsf', 'ifzqkm', 'qu', 's', 'mwm', 'is', 'zf', 'mwmfsw', 'uq'])
+We determined answer is mkq zf is wsf mwm qu uq mwmfsw s ifzqkm
+
+Judge: Correct! TWCTF{Hiyokko_Tsuppari}
