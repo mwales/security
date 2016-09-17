@@ -5,12 +5,14 @@ you had to determine what input generated the output given.
 
 So running the application a few times reveals alot...
 
-   $ ./reverse_box flaggoeshere
-   7013acc6c6eb0ecc060e030e
-   $ ./reverse_box flaggoeshere
-   791aa5cfcfe207c50f070a07
-   $ ./reverse_box flaggoeshere
-   ddbe016b6b46a361aba3aea3
+```
+$ ./reverse_box flaggoeshere
+7013acc6c6eb0ecc060e030e
+$ ./reverse_box flaggoeshere
+791aa5cfcfe207c50f070a07
+$ ./reverse_box flaggoeshere
+ddbe016b6b46a361aba3aea3
+```
 
 The output length stays the same for each run (2x as long as the input).  It should also be obvious
 that the output keeps changing!  A bit unusual...  Looking at the code via IDA or debugger reveals
@@ -96,22 +98,29 @@ at the location.  Any extra room will be converted to NOPs.
 
 Using this cool online assembler (https://defuse.ca/online-x86-assembler.htm), I determine:
 
-   b8 55 00 00 00          mov    eax,0x55
+```
+b8 55 00 00 00          mov    eax,0x55
+```
 
 And I can replace 0x55 with any hex value I like.  I will implement this in place of the code
 that keeps looping until a random non-zero number is generated.
 
-   ./patch32 reverse_box.hacked 0x80485ac 0xe b855000000
+```
+./patch32 reverse_box.hacked 0x80485ac 0xe b855000000
+```
 
 This didn't quite work, I forgot about the instructions to store this as a variable in memory (and
 not just leave it in the register).  I just copied the existing opcodes from the existing binary.
 
-   89 45 F4                          mov     [ebp+randomVal1To255], eax
+```
+89 45 F4                          mov     [ebp+randomVal1To255], eax
+```
 
 So my patching application would be configured like:
 
+```
 ./patch32 reverse_box.hacked 0x80485ac 0xe b8550000008945f4
-
+```
 
 Output from the patching process:
 
@@ -188,7 +197,9 @@ I then created a python script to run the patcher for all possible values 0x01-0
 is then called with as much of the ASCII table as possible for shell input.  Then for each cipher
 generated, it would then try to determine what the input would be to generate the challenge output.
 
-   ./generate_ciphers.py `cat reverse_box_flag_output.txt`
+```
+./generate_ciphers.py `cat reverse_box_flag_output.txt`
+```
 
 This will generate a block of input like the following for each trial:
 
@@ -221,11 +232,13 @@ Input to keygen:       N  N    2        T               T    B     2
 Input to keygen:       B  B  7 T 5Y5 5Y 23 Y  _ 3 Y5 3  2  aYN_ 37 T   
 Input to keygen:            B  {                                   {   
 Input to keygen:        p  l                     p           L        w
+```
 
 So flag is...
 
+```
 TWCTF{5UBS717U710N_C1PH3R_W17H_R4ND0M123D_5-B0X}
-
+```
 
 
 
