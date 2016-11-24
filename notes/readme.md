@@ -82,6 +82,14 @@ For C programming language:
 * First arg passed via ECX, second arg passed via EDX, and rest of the args are pushed on stack 
   (right to left)
 
+### Unix/Linux/Mac AMD64
+
+* First 6 integer args are passed via registers:  rdi, rsi, rdx, rcx/r10, r8, r9.
+* Floats are passed via xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
+* Additional args are passed on stack
+* Return value is stored in RAX and RDX
+
+
 
 ## GDB Cheatsheet
 
@@ -112,4 +120,19 @@ Units:
 
 * x/8xb $eip = examine 8 bytes at EIP address (in hex)
 * x/4xw addr = examine 4 32-bit words at address (in hex)
+
+## Weird assembly explained
+
+### Load Effective Address (LEA) on x86
+
+Supposed to be used for addressing members of structures that are in arrays, but more often than not
+is just used as some crazy shortcut by the compiler
+
+From stackoverflow post (http://stackoverflow.com/questions/1658294), hdante writes:
+
+  LEA Rt, [Rs1 + a * Rs2 + b]
+
+is equivalent to...
+
+  Rt = Rs1 + a * Rs2 + b
 
