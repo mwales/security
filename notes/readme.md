@@ -121,18 +121,3 @@ Units:
 * x/8xb $eip = examine 8 bytes at EIP address (in hex)
 * x/4xw addr = examine 4 32-bit words at address (in hex)
 
-## Weird assembly explained
-
-### Load Effective Address (LEA) on x86
-
-Supposed to be used for addressing members of structures that are in arrays, but more often than not
-is just used as some crazy shortcut by the compiler
-
-From stackoverflow post (http://stackoverflow.com/questions/1658294), hdante writes:
-
-  LEA Rt, [Rs1 + a * Rs2 + b]
-
-is equivalent to...
-
-  Rt = Rs1 + a * Rs2 + b
-
