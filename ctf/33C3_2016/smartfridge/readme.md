@@ -35,7 +35,10 @@ Execution:
 
 ## Sample execution / output
 
-Flags are stored on a remote server.  Below is the output of me running the application and getting the flag:
+Flags are stored on a remote server.  The source for the fridge client is main.cpp, and it has a
+lot more detail on what the message structures are that are sent back and forth.
+
+Below is the output of me running the application and getting the flag:
 
 ```
 mwales@Galaga:~/checkouts/security/ctf/33C3_2016/smartfridge1$ ./fc 123.123.123.123 12345 1 768305

@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 // To compile: g++ main.cpp -lcrypto -o fc
-// To run: ./fc 127.0.0.1 12345 1 12345 (for the binary they give you)
+// To run: ./fc 127.0.0.1 12345 1 123456 (for the binary they give you)
 
 // Tool to retrieve flag for the smartfridge1 reversing challenge for 33C3 CTF 2016
 
@@ -50,15 +50,6 @@ void hexDump(unsigned char const * const buffer, unsigned int bufferLen, FILE* f
   if (i % 16 != 0)
   {
     fprintf(fd, "\n");
-  }
-}
-
-void rawOut(unsigned char const * const buffer, unsigned int bufferLen, FILE* fd = stdout)
-{
-  unsigned int i;
-  for(i = 0; i < bufferLen; i++)
-  {
-    fprintf(fd, "%c", buffer[i]);
   }
 }
 
@@ -146,16 +137,6 @@ bool cbcDecryptMessage(unsigned char* aes128Key, unsigned char* cipherText, uint
     return true;
 }
 
-uint32_t endianSwap32bit(uint32_t buffer)
-{
-    uint32_t retVal = 0;
-    retVal |= (buffer & 0xff000000) >> 24;
-    retVal |= (buffer & 0x00ff0000) >> 8;
-    retVal |= (buffer & 0x0000ff00) << 8;
-    retVal |= (buffer & 0x000000ff) << 24;
-    return retVal;
-}
-
 bool doesStringStartWith(std::string needle, std::string haystack)
 {
     if (haystack.length() < needle.length())
@@ -179,7 +160,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 5)
     {
-        printf("Usage: %s ipAddress portNumber shelfNumber pinCode\n", argv[0]);
+        std::cerr << "Usage: " << argv[0] << " ipAddress portNumber shelfNumber pinCode" << std::endl;
         return 1;
     }
 
@@ -213,7 +194,8 @@ int main(int argc, char *argv[])
 
     char* pinCode = argv[4]; // "123456";
     int shelfNum = atoi(argv[3]);
-    printf("Shelf Num = %d\nPin Code = %s\n", shelfNum, pinCode);
+    std::cerr << "Shelf Num = " << shelfNum << std::endl;
+    std::cerr << "Pin Code = " << pinCode << std::endl;;
 
     // Pin code only fills up half of the block
     long long int pinCodeHalfBlock = strtoll(pinCode, NULL, 10);
@@ -221,7 +203,7 @@ int main(int argc, char *argv[])
     bzero(pinBlock, 0x10);
     memcpy(pinBlock, &pinCodeHalfBlock, 0x8);
 
-    printf("Pin Block:\n");
+    std::cerr << "Pin Block:" << std::endl;
     hexDump( (unsigned char*) &pinBlock, 0x10);
 
     // Clients "random" number
@@ -235,13 +217,14 @@ int main(int argc, char *argv[])
     AES_set_encrypt_key( (unsigned char*) &pinBlock, 128, &encryptKey);
     AES_encrypt( MRand, MConfirm, &encryptKey);
 
-    printf("\nMRand:\n");
+    std::cout << "MRand:" << std::endl;
     hexDump(MRand, 16);
 
-    printf("\nMConfirm:\n");
+    std::cout << "MConfirm:" << std::endl;
     hexDump(MConfirm, 16, stderr);
 
     // Each message is always preceded by a uint32_t message length (including the size field itself)
+    // Even the encrypted messages once pairing is complete.
 
     unsigned char MConfirmMsg[0x15];
     uint32_t messageLen = 0x15;
@@ -249,7 +232,7 @@ int main(int argc, char *argv[])
     MConfirmMsg[4] = shelfNum; // I think this is a shelf number
     memcpy(&MConfirmMsg[5], MConfirm, 0x10);
 
-    printf("About to send the MConfirmMsg\n");
+    std::cerr << "About to send the MConfirmMsg" << std::endl;
     hexDump(MConfirmMsg, 0x15);
     write(socketFd, MConfirmMsg, 0x15);
 
@@ -260,7 +243,7 @@ int main(int argc, char *argv[])
     uint32_t SConfigMsgSize;
     read(socketFd, &SConfigMsgSize, 4);
 
-    fprintf(stderr, "SConfigSize = %d\n", SConfigMsgSize);
+    std::cerr << "SConfigSize = " << SConfigMsgSize << std::endl;
 
     unsigned char SConirmData[16];
     read(socketFd, SConirmData, 16);
@@ -277,7 +260,7 @@ int main(int argc, char *argv[])
     memcpy(&MRandMsg[4], MRand, 0x10);
     //bzero(&MRand[0x14], 4);
 
-    printf("About to send the MRand\n");
+    std::cout << "About to send the MRand" << std::endl;
     hexDump(MRandMsg, 0x14);
 
     write(socketFd, MRandMsg, 0x14);
@@ -294,12 +277,13 @@ int main(int argc, char *argv[])
 
     if (bytesRead != 0x10)
     {
-        printf("Failed to complete handshake.  Only received %d of required 10 bytes of SRand\n", bytesRead);
+        std::cerr << "Failed to complete handshake.  Only received " << bytesRead
+                  << " of required 10 bytes of SRand" << std::endl;
         close(socketFd);
         return 1;
     }
 
-    printf("SRand Received.  Msg Size = %d\n", SRandMsgSize);
+    std::cerr << "SRand Received.  Msg Size = " << SRandMsgSize << std::endl;
     hexDump(SRand, 0x10);
 
     //*********************************************************************************************
@@ -314,7 +298,7 @@ int main(int argc, char *argv[])
 
     AES_encrypt( mergedRands, aesSessionKey, &encryptKey);
 
-    printf("\nDerived AES session key:\n");
+    std::cout << std::endl << "Derived AES session key:" << std::endl;
     hexDump(aesSessionKey, 0x10);
 
     //*********************************************************************************************
@@ -352,7 +336,7 @@ int main(int argc, char *argv[])
             doesStringStartWith("PUT", inputCommand) ||
             doesStringStartWith("CLOSE", inputCommand) )
         {
-            printf("No response expected for command: %s\n", inputCommand.c_str());
+            std::cerr << "No response expected for command: " << inputCommand << std::endl;
             continue;
         }
 
@@ -361,16 +345,16 @@ int main(int argc, char *argv[])
 
         if (responseLength <= 4)
         {
-            printf("Empty response received! Size = %d\n", responseLength);
+            std::cerr << "Empty response received! Size = " << responseLength << std::endl;
             continue;
         }
 
-        printf("Response rx length = %d\n", responseLength);
+        std::cout << "Response rx length = " << responseLength << std::endl;
         responseLength -= 4;
 
         if (responseLength > sizeof(responseBuffer) / sizeof(unsigned char))
         {
-            printf("Response message way too large!!!! %d bytes\n", responseLength);
+            std::cerr << "Response message way too large!!!! " << responseLength << " bytes" << std::endl;
             close(socketFd);
             return 1;
         }
