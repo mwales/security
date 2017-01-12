@@ -18,18 +18,61 @@
 #   figures this out, but I don't know how easy to do in assembly.  Gets even messier on ARM due
 #   to possible crazy addressing modes and what not
 
-def analyzeSingleFunction(startAddr, endAddr):
+import ida_hexrays
+
+def analyzeSingleArg(argText):
+  # If the arg is quoted, it's a literal string, done!
+  if (argText.find('"') != -1):
+    # We found quotes, strip them off and return
+    return argText.strip('"')
+
+  # It should start with an ampersand, strip it off front
+  if (argText.startsWith("&")):
+    argText = argText.strip('&')
+    # Lookup the symbol and try to figure out what it is
+
+  else:
+    return ""
+
+
+def analyzeSingleCall(lineOfC, paramIndex):
+  beginParen = lineOfC.find("(")
+  endParen   = lineOfC.rfind(")")
+
+  if ((beginParen == -1) or (endParen == -1)):
+    print("Invalid function call format")
+    #print("Begin@", beginParen, " End@", endParen)
+    return
+  else:
+    argList = lineOfC[beginParen + 1:endParen].split(",")
+    print argList
+
+    if (len(argList) > paramIndex):
+      singleArg = argList[paramIndex]
+      print "Single Arg:" + singleArg
+      analyzeSingleArg(singleArg.strip())
+
+
+
+def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
   print("Function Name: " + GetFunctionName(startAddr))
-  
+
   curAddr = startAddr
-  while(curAddr < endAddr):
-  
-    print(GetDisasm(curAddr))
+  #while(curAddr < endAddr):
+
+    #print(GetDisasm(curAddr))
     #print("Item size: ", ItemSize(startAddr))
-    curAddr += ItemSize(curAddr)
-    
-    
-  print("End of analysis")
+    #curAddr += ItemSize(curAddr)
+
+
+  #print("End of analysis")
+
+  c = ida_hexrays.decompile(startAddr)
+  for singleLine in str(c).split("\n"):
+    leftJustifiedLine = singleLine.lstrip()
+    if (leftJustifiedLine.startswith(searchString + "(")):
+      print leftJustifiedLine
+      analyzeSingleCall(leftJustifiedLine, paramIndex)
 
 
 
@@ -40,8 +83,11 @@ while (funcStartAddr != 0xffffffff):
   funcStartAddr = NextFunction(funcStartAddr)
   funcEndAddr = FindFuncEnd(funcStartAddr)
   funcName = GetFunctionName(funcStartAddr)
-  
+
+  searchString = "NsLog"
+  paramIndex = 2
+
   #print ("Func start: ", hex(funcStartAddr), " and ends ", hex(func_end_addr), "name=", funcName)
-  
+
   if (funcName.startswith("sub_")):
-    analyzeSingleFunction(funcStartAddr, funcEndAddr) 
+    analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
