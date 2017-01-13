@@ -117,10 +117,10 @@ while (funcStartAddr != 0xffffffff):
     if (suggestedName != ""):
       discoveredNames.append(suggestedName)
 
-#mb = QtWidgets.QMessageBox()
-#mb.setText("Done!")
-#mb.setDetailedText(str(discoveredNames)
-#mb.setModal(True)
-#mb.show()
+mb = QtWidgets.QMessageBox()
+mb.setText("Analysis Complete!")
+mb.setDetailedText("\n".join(discoveredNames))
+mb.setModal(True)
+mb.show()
 
 print("Done.  Discoverd: ", str(discoveredNames))
