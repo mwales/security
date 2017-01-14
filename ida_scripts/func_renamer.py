@@ -15,6 +15,80 @@ import ida_hexrays
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+class Ui_Dialog(object):
+    def __init__(self):
+        self.renameData = []
+
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(655, 532)
+        self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.tableWidget = QtWidgets.QTableWidget(Dialog)
+        self.tableWidget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableWidget.setTabKeyNavigation(False)
+        self.tableWidget.setDragDropOverwriteMode(False)
+        self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.tableWidget.setRowCount(10)
+        self.tableWidget.setColumnCount(4)
+        self.tableWidget.setObjectName("tableWidget")
+        self.tableWidget.setHorizontalHeaderLabels(["Rename", "Address", "Current Name", "Suggested Name"])
+        self.verticalLayout.addWidget(self.tableWidget)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        self.pushButton = QtWidgets.QPushButton(Dialog)
+        self.pushButton.setObjectName("pushButton")
+        self.horizontalLayout.addWidget(self.pushButton)
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
+        self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
+        self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setObjectName("buttonBox")
+        self.horizontalLayout.addWidget(self.buttonBox)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+
+        self.retranslateUi(Dialog)
+        self.buttonBox.accepted.connect(Dialog.accept)
+        self.buttonBox.rejected.connect(Dialog.reject)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        self.pushButton.setText(_translate("Dialog", "PushButton"))
+
+    def addItem(self, address, curName, newName):
+        rowInfo = []
+
+        # store internally important stuff to prcess later
+        cb = QtWidgets.QCheckBox()
+        rowInfo.append(cb)
+        rowInfo.append(address)
+        rowInfo.append(newName)
+
+        curRow = len(self.renameData)
+
+        if (self.tableWidget.rowCount() == curRow):
+            # Add a new row!
+            self.tableWidget.setRowCount(curRow + 1)
+
+        print("Adding a row to the table at curRow = ", curRow)
+        self.tableWidget.setCellWidget(curRow, 0, cb)
+        self.tableWidget.setItem(curRow, 1, QtWidgets.QTableWidgetItem(hex(address)))
+        self.tableWidget.setItem(curRow, 2, QtWidgets.QTableWidgetItem(curName))
+        self.tableWidget.setItem(curRow, 3, QtWidgets.QTableWidgetItem(newName))
+
+        self.renameData.append(rowInfo)
+
+    def adjustColumnWidths(self):
+        self.tableWidget.resizeColumnsToContents()
+
+
+
+
 def analyzeSingleArg(argText):
   # If the arg is quoted, it's a literal string, done!
   if (argText.find('"') != -1):
@@ -100,6 +174,11 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
 
 discoveredNames = []
 funcStartAddr = 0
+
+dlg = QtWidgets.QDialog()
+ui = Ui_Dialog()
+ui.setupUi(dlg)
+
 while (funcStartAddr != 0xffffffff):
 
   funcStartAddr = NextFunction(funcStartAddr)
@@ -116,11 +195,20 @@ while (funcStartAddr != 0xffffffff):
 
     if (suggestedName != ""):
       discoveredNames.append(suggestedName)
+      ui.addItem(funcStartAddr, funcName, suggestedName)
 
-mb = QtWidgets.QMessageBox()
-mb.setText("Analysis Complete!")
-mb.setDetailedText("\n".join(discoveredNames))
-mb.setModal(True)
-mb.show()
+
+
+#mb = QtWidgets.QMessageBox()
+#mb.setText("Analysis Complete!")
+#mb.setDetailedText("\n".join(discoveredNames))
+#mb.setModal(True)
+#mb.show()
+
+
+ui.adjustColumnWidths()
+dlg.show()
+
+
 
 print("Done.  Discoverd: ", str(discoveredNames))
