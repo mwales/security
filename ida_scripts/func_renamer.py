@@ -53,6 +53,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
         self.buttonBox.accepted.connect(Dialog.accept)
+        self.buttonBox.accepted.connect(okClicked)
         self.buttonBox.rejected.connect(Dialog.reject)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
@@ -98,10 +99,23 @@ class Ui_Dialog(object):
             else:
                 rowData[0].setChecked(True)
 
+    def renameFunctions(self):
+        print("Rename functions!")
+        for rowData in self.renameData:
+            if (rowData[0].isChecked()):
+                print("Renaming ", rowData[1], " to ", rowData[2])
+                MakeName(rowData[1], rowData[2])
+
+
+
+
 def invertAllClicked():
     print("Invert all clicked")
     ui.invertAll()
 
+def okClicked():
+    print("OK Clicekd")
+    ui.renameFunctions()
 
 def analyzeSingleArg(argText):
   # If the arg is quoted, it's a literal string, done!
@@ -203,66 +217,61 @@ def deconflictName(suggestedName, discoveredNames):
 
 
 
+traceFunc = ChooseFunction("Function that is used for trace statements?")
+searchString = GetFunctionName(traceFunc)
+print("User picked: ", searchString)
+
+paramIndex = AskLong(1, "Which argument of the function is the function name (0, 1, 2, ...)?")
+if (paramIndex is None) or (paramIndex == 0xffffffff):
+    print ("Invalid choice", paramIndex)
+else:
+
+
+    discoveredNames = []
+    funcStartAddr = 0
+
+    dlg = QtWidgets.QDialog()
+    ui = Ui_Dialog()
+    ui.setupUi(dlg)
+
+    # List of function info lists(start, end, name)
+    funcInfoBefore = []
+    funcList = []
+
+    while (funcStartAddr != 0xffffffff):
+
+        funcStartAddr = NextFunction(funcStartAddr)
+        funcEndAddr = FindFuncEnd(funcStartAddr)
+        funcName = GetFunctionName(funcStartAddr)
+        funcList.append(funcName)
+
+        functionInfoEntry = []
+        functionInfoEntry.append(funcStartAddr)
+        functionInfoEntry.append(funcEndAddr)
+        functionInfoEntry.append(funcName)
+        funcInfoBefore.append(functionInfoEntry)
+
+    for fInfo in funcInfoBefore:
+        funcStartAddr = fInfo[0]
+        funcEndAddr   = fInfo[1]
+        funcName      = fInfo[2]
+
+        #print ("Func start: ", hex(funcStartAddr), " and ends ", hex(func_end_addr), "name=", funcName)
+
+        if (funcName.startswith("sub_")):
+            suggestedName = analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
+
+            if (suggestedName != ""):
+                # A name has been suggest, but what if we have already discovered this name before, and more than one function
+                # have the same name.  We should just add a number on the end and find a name not taken yet
+                nonConflictName = deconflictName(suggestedName, funcList)
+                discoveredNames.append(nonConflictName)
+                ui.addItem(funcStartAddr, funcName, nonConflictName)
+                funcList.append(nonConflictName)
 
 
 
-discoveredNames = []
-funcStartAddr = 0
+    ui.adjustColumnWidths()
+    dlg.show()
 
-dlg = QtWidgets.QDialog()
-ui = Ui_Dialog()
-ui.setupUi(dlg)
-
-# List of function info lists(start, end, name)
-funcInfoBefore = []
-funcList = []
-
-while (funcStartAddr != 0xffffffff):
-
-    funcStartAddr = NextFunction(funcStartAddr)
-    funcEndAddr = FindFuncEnd(funcStartAddr)
-    funcName = GetFunctionName(funcStartAddr)
-    funcList.append(funcName)
-
-    functionInfoEntry = []
-    functionInfoEntry.append(funcStartAddr)
-    functionInfoEntry.append(funcEndAddr)
-    functionInfoEntry.append(funcName)
-    funcInfoBefore.append(functionInfoEntry)
-
-searchString = "NsLog"
-paramIndex = 2
-
-for fInfo in funcInfoBefore:
-    funcStartAddr = fInfo[0]
-    funcEndAddr   = fInfo[1]
-    funcName      = fInfo[2]
-
-    #print ("Func start: ", hex(funcStartAddr), " and ends ", hex(func_end_addr), "name=", funcName)
-
-    if (funcName.startswith("sub_")):
-        suggestedName = analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
-
-        if (suggestedName != ""):
-            # A name has been suggest, but what if we have already discovered this name before, and more than one function
-            # have the same name.  We should just add a number on the end and find a name not taken yet
-            nonConflictName = deconflictName(suggestedName, funcList)
-            discoveredNames.append(nonConflictName)
-            ui.addItem(funcStartAddr, funcName, nonConflictName)
-            funcList.append(nonConflictName)
-
-
-
-#mb = QtWidgets.QMessageBox()
-#mb.setText("Analysis Complete!")
-#mb.setDetailedText("\n".join(discoveredNames))
-#mb.setModal(True)
-#mb.show()
-
-
-ui.adjustColumnWidths()
-dlg.show()
-
-
-
-print("Done.  Discoverd: ", str(discoveredNames))
+print("Done.")
