@@ -19,6 +19,7 @@ class Ui_Dialog(object):
     def __init__(self):
         self.renameData = []
 
+
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(655, 532)
@@ -55,10 +56,12 @@ class Ui_Dialog(object):
         self.buttonBox.rejected.connect(Dialog.reject)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
+        self.pushButton.clicked.connect(invertAllClicked)
+
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.pushButton.setText(_translate("Dialog", "PushButton"))
+        Dialog.setWindowTitle(_translate("Dialog", "Rename Confirmation"))
+        self.pushButton.setText(_translate("Dialog", "Invert All"))
 
     def addItem(self, address, curName, newName):
         rowInfo = []
@@ -86,7 +89,18 @@ class Ui_Dialog(object):
     def adjustColumnWidths(self):
         self.tableWidget.resizeColumnsToContents()
 
+    def invertAll(self):
+        print("Invert All!")
 
+        for rowData in self.renameData:
+            if (rowData[0].isChecked()):
+                rowData[0].setChecked(False)
+            else:
+                rowData[0].setChecked(True)
+
+def invertAllClicked():
+    print("Invert all clicked")
+    ui.invertAll()
 
 
 def analyzeSingleArg(argText):
@@ -170,6 +184,26 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
 
   return fName
 
+def deconflictName(suggestedName, discoveredNames):
+    nameAttemptNum = 0
+    while True:
+        if (nameAttemptNum == 0):
+            curAttempt = suggestedName
+        else:
+            curAttempt = suggestedName + str(nameAttemptNum)
+
+        print("Attempting function name for deconflict: ", curAttempt)
+
+        if (curAttempt not in discoveredNames):
+            return curAttempt
+
+        nameAttemptNum += 1
+
+
+
+
+
+
 
 
 discoveredNames = []
@@ -179,23 +213,43 @@ dlg = QtWidgets.QDialog()
 ui = Ui_Dialog()
 ui.setupUi(dlg)
 
+# List of function info lists(start, end, name)
+funcInfoBefore = []
+funcList = []
+
 while (funcStartAddr != 0xffffffff):
 
-  funcStartAddr = NextFunction(funcStartAddr)
-  funcEndAddr = FindFuncEnd(funcStartAddr)
-  funcName = GetFunctionName(funcStartAddr)
+    funcStartAddr = NextFunction(funcStartAddr)
+    funcEndAddr = FindFuncEnd(funcStartAddr)
+    funcName = GetFunctionName(funcStartAddr)
+    funcList.append(funcName)
 
-  searchString = "NsLog"
-  paramIndex = 2
+    functionInfoEntry = []
+    functionInfoEntry.append(funcStartAddr)
+    functionInfoEntry.append(funcEndAddr)
+    functionInfoEntry.append(funcName)
+    funcInfoBefore.append(functionInfoEntry)
 
-  #print ("Func start: ", hex(funcStartAddr), " and ends ", hex(func_end_addr), "name=", funcName)
+searchString = "NsLog"
+paramIndex = 2
 
-  if (funcName.startswith("sub_")):
-    suggestedName = analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
+for fInfo in funcInfoBefore:
+    funcStartAddr = fInfo[0]
+    funcEndAddr   = fInfo[1]
+    funcName      = fInfo[2]
 
-    if (suggestedName != ""):
-      discoveredNames.append(suggestedName)
-      ui.addItem(funcStartAddr, funcName, suggestedName)
+    #print ("Func start: ", hex(funcStartAddr), " and ends ", hex(func_end_addr), "name=", funcName)
+
+    if (funcName.startswith("sub_")):
+        suggestedName = analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
+
+        if (suggestedName != ""):
+            # A name has been suggest, but what if we have already discovered this name before, and more than one function
+            # have the same name.  We should just add a number on the end and find a name not taken yet
+            nonConflictName = deconflictName(suggestedName, funcList)
+            discoveredNames.append(nonConflictName)
+            ui.addItem(funcStartAddr, funcName, nonConflictName)
+            funcList.append(nonConflictName)
 
 
 
