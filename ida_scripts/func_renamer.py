@@ -1,21 +1,18 @@
 
-# I'm trying to create a program that will look for unnamed functions in a binary, and then see if
+# This IDA python script will look for unnamed functions in a binary, and then see if
 # they can be named using a trace debug statements included in the binary that used the a
 # function name macro for tracing program execution
 
-# To Do List
-# - Need to see if discovered function name already exists in the IDA DB
-# - If names already exists, try func_name1, func_name2, etc
-# - Perform the rename
-# - Create a dialog that allows user to type in log trace function name and parameter number
-# - Create a dialog that ouptuts the results / discovery
-# - Create a dialog with table and checkbox so user can decide which names to implement on function by function basis
-
 import ida_hexrays
+
+# ********************************************************************************
+# PyQt GUI stuff below
+# ********************************************************************************
+
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-class Ui_Dialog(object):
+class RenameSelectionGui(object):
     def __init__(self):
         self.renameData = []
 
@@ -67,7 +64,7 @@ class Ui_Dialog(object):
     def addItem(self, address, curName, newName):
         rowInfo = []
 
-        # store internally important stuff to prcess later
+        # store internally important stuff to process later
         cb = QtWidgets.QCheckBox()
         rowInfo.append(cb)
         rowInfo.append(address)
@@ -79,7 +76,7 @@ class Ui_Dialog(object):
             # Add a new row!
             self.tableWidget.setRowCount(curRow + 1)
 
-        print("Adding a row to the table at curRow = ", curRow)
+        #print("Adding a row to the table at curRow = ", curRow)
         self.tableWidget.setCellWidget(curRow, 0, cb)
         self.tableWidget.setItem(curRow, 1, QtWidgets.QTableWidgetItem(hex(address)))
         self.tableWidget.setItem(curRow, 2, QtWidgets.QTableWidgetItem(curName))
@@ -100,22 +97,27 @@ class Ui_Dialog(object):
                 rowData[0].setChecked(True)
 
     def renameFunctions(self):
-        print("Rename functions!")
+        print("Renaming functions!")
         for rowData in self.renameData:
             if (rowData[0].isChecked()):
                 print("Renaming ", rowData[1], " to ", rowData[2])
                 MakeName(rowData[1], rowData[2])
+        print("Renaming complete")
 
-
-
-
+# Qt Slots that are called by the GUI (but they don't exist within the class like a Qt C++ slot should)
 def invertAllClicked():
-    print("Invert all clicked")
     ui.invertAll()
 
 def okClicked():
-    print("OK Clicekd")
     ui.renameFunctions()
+
+
+
+
+
+# ********************************************************************************
+# Analysis Functions Below
+# ********************************************************************************
 
 def analyzeSingleArg(argText):
   # If the arg is quoted, it's a literal string, done!
@@ -127,13 +129,10 @@ def analyzeSingleArg(argText):
   if (argText.startswith("&unk_")):
     unkAddrText = argText[5:]
     unkAddrHex = int(unkAddrText, 16)
-    print("Decoding param ", unkAddrText, " to ", unkAddrHex)
+    #print("Decoding param ", unkAddrText, " to ", unkAddrHex)
 
     fName = GetString(unkAddrHex)
-    print("Var value = ", fName)
     # Lookup the symbol and try to figure out what it is
-
-    #print("Type of label: ", IsString(argText))
     return fName
 
   else:
@@ -145,39 +144,34 @@ def analyzeSingleCall(lineOfC, paramIndex):
   endParen   = lineOfC.rfind(")")
 
   if ((beginParen == -1) or (endParen == -1)):
-    print("Invalid function call format")
+    print "Invalid function call format: {}".format(lineOfC)
     #print("Begin@", beginParen, " End@", endParen)
     return ""
   else:
     argList = lineOfC[beginParen + 1:endParen].split(",")
-    print argList
+    #print argList
 
     if (len(argList) > paramIndex):
       singleArg = argList[paramIndex]
-      print "Single Arg:" + singleArg
+      #print "Single Arg:" + singleArg
       return analyzeSingleArg(singleArg.strip())
 
 
 
 def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
-  print("Function Name: " + GetFunctionName(startAddr))
+  #print"Analyzing Function Name: {}".format(GetFunctionName(startAddr))
 
   curAddr = startAddr
-  #while(curAddr < endAddr):
 
-    #print(GetDisasm(curAddr))
-    #print("Item size: ", ItemSize(startAddr))
-    #curAddr += ItemSize(curAddr)
-
-
-  #print("End of analysis")
+  # If some trace statements within this function don't match others, name the function with the
+  # name used most often, which this dict will keep track of
   possibleNameList = dict()
 
   c = ida_hexrays.decompile(startAddr)
   for singleLine in str(c).split("\n"):
     leftJustifiedLine = singleLine.lstrip()
     if (leftJustifiedLine.startswith(searchString + "(")):
-      print leftJustifiedLine
+      #print leftJustifiedLine
       possibleName = analyzeSingleCall(leftJustifiedLine, paramIndex)
 
       if possibleName in possibleNameList:
@@ -185,10 +179,12 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
       else:
         possibleNameList[possibleName] = 1
 
-  print("All possible function names: ", possibleNameList)
 
   if (len(possibleNameList) == 0):
+    print "No function names discovered for {}".format(GetFunctionName(startAddr))
     return ""
+
+  print "All possible function names discovered for {}:\n\t{}".format(GetFunctionName(startAddr), "\n\t".join(possibleNameList))
 
   numUses = 0
   for fName in possibleNameList:
@@ -206,32 +202,37 @@ def deconflictName(suggestedName, discoveredNames):
         else:
             curAttempt = suggestedName + str(nameAttemptNum)
 
-        print("Attempting function name for deconflict: ", curAttempt)
+        #print("Attempting function name for deconflict: ", curAttempt)
 
         if (curAttempt not in discoveredNames):
+            if (nameAttemptNum != 0):
+                print "Function name {} had a conflict, non-conflicting name is {}".format(suggestedName, curAttempt)
+
             return curAttempt
 
         nameAttemptNum += 1
 
 
 
-
+# ********************************************************************************
+# Main start of script here
+# ********************************************************************************
 
 traceFunc = ChooseFunction("Function that is used for trace statements?")
 searchString = GetFunctionName(traceFunc)
-print("User picked: ", searchString)
 
-paramIndex = AskLong(1, "Which argument of the function is the function name (0, 1, 2, ...)?")
+paramIndex = AskLong(1, "Which argument of the trace function is the function name (0, 1, 2, ...)?")
 if (paramIndex is None) or (paramIndex == 0xffffffff):
-    print ("Invalid choice", paramIndex)
+    print "Invalid choice ({})".format(paramIndex)
+    # I'd really like to just call Exit() here, but nothing seems to work
 else:
-
+    print "User picked: {} and argument number {}".format(searchString, paramIndex)
 
     discoveredNames = []
     funcStartAddr = 0
 
     dlg = QtWidgets.QDialog()
-    ui = Ui_Dialog()
+    ui = RenameSelectionGui()
     ui.setupUi(dlg)
 
     # List of function info lists(start, end, name)
@@ -268,8 +269,6 @@ else:
                 discoveredNames.append(nonConflictName)
                 ui.addItem(funcStartAddr, funcName, nonConflictName)
                 funcList.append(nonConflictName)
-
-
 
     ui.adjustColumnWidths()
     dlg.show()
