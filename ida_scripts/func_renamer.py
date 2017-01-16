@@ -194,13 +194,31 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
 
   return fName
 
+def fixNameForIda(suggestedName):
+    if (suggestedName.startswith("~")):
+        suggestedName = suggestedName + "_destructor"
+        suggestedName = suggestedName[1:]
+
+    # Add anything else you end up spotting in the wild that doesn't work
+    invalidCharsReplaceUnderscore = [ ",", " ", "?", "." ]
+    invalidCharsReplaceEmpty      = [ "(", ")" ]
+
+    for singleInvalidChar in invalidCharsReplaceUnderscore:
+        suggestedName = suggestedName.replace(singleInvalidChar, "_")
+
+    for singleInvalidChar in invalidCharsReplaceEmpty:
+        suggestedName = suggestedName.replace(singleInvalidChar, "")
+
+    return suggestedName
+
+
 def deconflictName(suggestedName, discoveredNames):
     nameAttemptNum = 0
     while True:
         if (nameAttemptNum == 0):
-            curAttempt = suggestedName
+            curAttempt = fixNameForIda(suggestedName)
         else:
-            curAttempt = suggestedName + str(nameAttemptNum)
+            curAttempt = fixNameForIda(suggestedName) + str(nameAttemptNum)
 
         #print("Attempting function name for deconflict: ", curAttempt)
 
@@ -239,11 +257,13 @@ else:
     funcInfoBefore = []
     funcList = []
 
-    while (funcStartAddr != 0xffffffff):
-
+    while True:
         funcStartAddr = NextFunction(funcStartAddr)
         funcEndAddr = FindFuncEnd(funcStartAddr)
         funcName = GetFunctionName(funcStartAddr)
+        if (funcName == ""):
+            break
+        
         funcList.append(funcName)
 
         functionInfoEntry = []
