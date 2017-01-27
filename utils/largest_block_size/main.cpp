@@ -7,6 +7,12 @@
 #include<map>
 #include<stdint.h>
 
+// Other things I want to add to this one day...
+// - Is there a weird sized header block that you need to trim off before getting to the blocked file?
+// - What is the entropy of the file?
+// - What is the entropy of n-th byte in file (looking at other files in collection with similar encoding)
+// - Do any files have common headers or trailers?
+
 int main(int argc, char** argv)
 {
    if (!argc)
