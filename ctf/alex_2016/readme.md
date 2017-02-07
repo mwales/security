@@ -1,25 +1,31 @@
-Crypto challenge 1:
+# Crypto challenge 1:
 
 Big blob of text that was "ZERO ONE ZERO ..."
 
 Wrote a program (decoder.cpp) to decode it into ASCII...
 
-> Li0gLi0uLiAuIC0uLi0gLS4tLiAtIC4uLS4gLSAuLi4uIC4tLS0tIC4uLi4uIC0tLSAuLS0tLSAuLi4gLS0tIC4uLi4uIC4uLSAuLS0uIC4uLi0tIC4tLiAtLS0gLi4uLi4gLiAtLi0uIC4tLiAuLi4tLSAtIC0tLSAtIC0uLi0gLQ==
+```
+Li0gLi0uLiAuIC0uLi0gLS4tLiAtIC4uLS4gLSAuLi4uIC4tLS0tIC4uLi4uIC0tLSAuLS0tLSAuLi4gLS0tIC4uLi4uIC4uLSAuLS0uIC4uLi0tIC4tLiAtLS0gLi4uLi4gLiAtLi0uIC4tLiAuLi4tLSAtIC0tLSAtIC0uLi0gLQ==
+```
 
 So, base64 decoded that...
 
-> .- .-.. . -..- -.-. - ..-. - .... .---- ..... --- .---- ... --- ..... ..- .--. ...-- .-. --- ..... . -.-. .-. ...-- - --- - -..- -
+```
+.- .-.. . -..- -.-. - ..-. - .... .---- ..... --- .---- ... --- ..... ..- .--. ...-- .-. --- ..... . -.-. .-. ...-- - --- - -..- -
+```
 
 wtf, lol.  Found an online morse code translator...
 
-> ALEXCTFTH15O1SO5UP3RO5ECR3TOTXT
-
+```
+ALEXCTFTH15O1SO5UP3RO5ECR3TOTXT
+```
 Modified formatting to be more flag like...
 
-> FLAG ALEXCTF{TH15_1S_5UP3R_5ECR3T_TXT}
+```
+FLAG ALEXCTF{TH15_1S_5UP3R_5ECR3T_TXT}
+```
 
-
-Reversing challenge 2 (re2):
+# Reversing challenge 2 (re2):
 
 I ended up solving this by having the debugger tell me what the next unknown character of the
 flag was each time I ran it.  I placed a breakpoint and script at the instruction that has a check
@@ -67,9 +73,11 @@ Better luck next time
 
 Keep running the program over and over adding a character each time to the flag until you have the complete flag:
 
-> FLAG: ALEXCTF{W3_L0v3_C_W1th_CL45535}
+```
+FLAG: ALEXCTF{W3_L0v3_C_W1th_CL45535}
+```
 
-Reversing challenge 3 (catalyst):
+#Reversing challenge 3 (catalyst):
 
 The first thing you notice is that the author put a bunch of super annoying sleep calls all over
 the place making the thing take forever to run.  While Binary Ninja didn't find most of the
@@ -79,9 +87,11 @@ instruction so I wouldn't have to wait on it any longer.
 The username is validated against what was a system of equations that you could use algebra to
 solve:
 
-> v4 - v3 + v2 == 0x5C664B56
-> v3 + 3 * (v2 + v4) == 0x2E700C7B2
-> v2 * v3 == 0x32AC30689A6AD314
+```
+v4 - v3 + v2 == 0x5C664B56
+v3 + 3 * (v2 + v4) == 0x2E700C7B2
+v2 * v3 == 0x32AC30689A6AD314
+```
 
 Where v4 is the first part of the username, v3 is the second part, and v4 is the last third.
 
