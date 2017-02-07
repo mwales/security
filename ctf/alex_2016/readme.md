@@ -41,7 +41,7 @@ commands
 Then I keep running the challenge by typing:
 
 ```
-run ALEXaaa
+run ALEXCTFaaa
 
 Starting program: /home/username/ctf/alex/re2 ALEXCTFa
  
