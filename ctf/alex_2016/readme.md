@@ -2,7 +2,7 @@
 
 Big blob of text that was "ZERO ONE ZERO ..."
 
-Wrote a program (decoder.cpp) to decode it into ASCII...
+Wrote a [program (decoder.cpp)](decoder.cpp) to decode it into ASCII...
 
 ```
 Li0gLi0uLiAuIC0uLi0gLS4tLiAtIC4uLS4gLSAuLi4uIC4tLS0tIC4uLi4uIC0tLSAuLS0tLSAuLi4gLS0tIC4uLi4uIC4uLSAuLS0uIC4uLi0tIC4tLiAtLS0gLi4uLi4gLiAtLi0uIC4tLiAuLi4tLSAtIC0tLSAtIC0uLi0gLQ==
@@ -123,7 +123,7 @@ password was divided into 3 uint32_t values, summed together, and passed to sran
 the pseudo-random sequence.  Every 4 bytes of the password were validated by getting another
 uint32_t from the PRNG, adding then adding against a constant.
 
-I created a program (catalyst.c) to output the password:
+I created a [program (catalyst.c)](catalyst.c) to output the password:
 
 > Password: sLSVpQ4vK3cGWyW86AiZhggwLHBjmx9CRspVGggj
 
