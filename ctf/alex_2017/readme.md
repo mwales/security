@@ -36,7 +36,7 @@ I went around and around on this, but in the end I came up with a way better sol
 when I did the homework for the Coursera class.
 
 You can google search for to see how the attack on multiple uses of a one time pad work when
-encrypting ASCII text data.  This [stack exchange answer](http://crypto.stackexchange.com/questions/6020/many-time-pad-attack/6095)
+encrypting ASCII text data.  This [stack exchange answer](http://crypto.stackexchange.com/a/6095)
 by Ilmari Karonen summed it up quite well I thought.
 
 For my [application (otp.cpp)](otp.cpp), you provide a [key](otp_key.txt) as the first line 
