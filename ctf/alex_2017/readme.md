@@ -25,6 +25,34 @@ Modified formatting to be more flag like...
 FLAG ALEXCTF{TH15_1S_5UP3R_5ECR3T_TXT}
 ```
 
+# Crypto challenge 2:
+
+I didn't finish this challenge within the time frame of the CTF, but I did finish it the next day
+or two.  Dan Boneh's (Stanford) Coursera Cryptography I course actually has a homework problem
+that is just like this.  I couldn't actually find my homework source code though, so I had to 
+reinvent the wheel.
+
+I went around and around on this, but in the end I came up with a way better solution than I had
+when I did the homework for the Coursera class.
+
+You can google search for to see how the attack on multiple uses of a one time pad work when
+encrypting ASCII text data.  This [stack overflow answer](http://crypto.stackexchange.com/questions/6020/many-time-pad-attack)
+by Ilmari Karonen summed it up quite well I thought.
+
+For my [application (otp.cpp)](otp.cpp), you provide a [key](otp_key.txt) as the first line 
+of input to the application, and then the [ciphertext message data (otp_msg.txt)](otp_msg.txt)
+to decrypt as the rest of the input.  It will decrypt the data using the provided key and
+output the plaintext.  It will also try to derive the key itself, decrypt the data, and then
+display the derived plaintext.
+
+It can't derive the key completely, so the user has to manually tweak it in about 3 spots to
+determine the proper key.
+
+Once the key is found, the key can them be converted from ASCII hexadecimal to plain ASCII text
+to reveal the key:
+
+> ALEXCTF{HERE_GOES_THE_KEY}
+
 # Reversing challenge 2 (re2):
 
 I ended up solving this by having the debugger tell me what the next unknown character of the
