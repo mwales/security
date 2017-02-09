@@ -45,6 +45,85 @@ to decrypt as the rest of the input.  It will decrypt the data using the provide
 output the plaintext.  It will also try to derive the key itself, decrypt the data, and then
 display the derived plaintext.
 
+Sample run:
+
+```
+cat otp_key.txt otp_msg.txt | ./otp                                                                                                                                                    
+Ciphertext = 0529242a631234122d2b36697f13272c207f2021283a6b0c7908
+Ciphertext = 2f28202a302029142c653f3c7f2a2636273e3f2d653e25217908
+Ciphertext = 322921780c3a235b3c2c3f207f372e21733a3a2b37263b313012
+Ciphertext = 2f6c363b2b312b1e64651b6537222e37377f2020242b6b2c2d5d
+Ciphertext = 283f652c2b31661426292b653a292c372a2f20212a316b283c09
+Ciphertext = 29232178373c270f682c216532263b2d3632353c2c3c2a293504
+Ciphertext = 613c37373531285b3c2a72273a67212a277f373a243c20203d5d
+Ciphertext = 243a202a633d205b3c2d3765342236653a2c7423202f3f652a18
+Ciphertext = 2239373d6f740a1e3c651f207f2c212a247f3d2e65262430791c
+Ciphertext = 263e203d63232f0f20653f207f332065262c3168313722367918
+Ciphertext = 2f2f372133202f142665212637222220733e383f2426386b
+Verified all CTs are ASCII plaintext data
+Max message len = 26
+********************************************************************************
+* Decrypting with key provided                                                 *
+********************************************************************************
+Key (len = 26) = 41 4c 45 58 43 54 46 7b 48 45 52 45 5f 47 4f 45 53 5f 54 48 45 5f 4b 45 59 7d     ALEXCTF{HERE_GOES_THE_KEY}
+
+44 65 61 72 20 46 72 69 65 6e 64 2c 20 54 68 69 73 20 74 69 6d 65 20 49 20 75     Dear Friend, This time I u
+6e 64 65 72 73 74 6f 6f 64 20 6d 79 20 6d 69 73 74 61 6b 65 20 61 6e 64 20 75     nderstood my mistake and u
+73 65 64 20 4f 6e 65 20 74 69 6d 65 20 70 61 64 20 65 6e 63 72 79 70 74 69 6f     sed One time pad encryptio
+6e 20 73 63 68 65 6d 65 2c 20 49 20 68 65 61 72 64 20 74 68 61 74 20 69 74 20     n scheme, I heard that it 
+69 73 20 74 68 65 20 6f 6e 6c 79 20 65 6e 63 72 79 70 74 69 6f 6e 20 6d 65 74     is the only encryption met
+68 6f 64 20 74 68 61 74 20 69 73 20 6d 61 74 68 65 6d 61 74 69 63 61 6c 6c 79     hod that is mathematically
+20 70 72 6f 76 65 6e 20 74 6f 20 62 65 20 6e 6f 74 20 63 72 61 63 6b 65 64 20      proven to be not cracked 
+65 76 65 72 20 69 66 20 74 68 65 20 6b 65 79 20 69 73 20 6b 65 70 74 20 73 65     ever if the key is kept se
+63 75 72 65 2c 20 4c 65 74 20 4d 65 20 6b 6e 6f 77 20 69 66 20 79 6f 75 20 61     cure, Let Me know if you a
+67 72 65 65 20 77 69 74 68 20 6d 65 20 74 6f 20 75 73 65 20 74 68 69 73 20 65     gree with me to use this e
+6e 63 72 79 70 74 69 6f 6e 20 73 63 68 65 6d 65 20 61 6c 77 61 79 73 2e     ncryption scheme always.
+
+********************************************************************************
+* Decrypting with derived key                                                  *
+********************************************************************************
+We think for pos 0 msg 65 is a space! (10 matches)
+We think for pos 1 msg 76 is a space! (10 matches)
+We think for pos 2 msg 69 is a space! (10 matches)
+We think for pos 3 msg 88 is a space! (18 matches)
+We think for pos 4 msg 67 is a space! (21 matches)
+We think for pos 5 msg 84 is a space! (10 matches)
+We think for pos 6 msg 70 is a space! (10 matches)
+We think for pos 7 msg 123 is a space! (24 matches)
+We think for pos 8 msg 68 is a space! (9 matches)
+We think for pos 9 msg 69 is a space! (30 matches)
+We think for pos 10 msg 82 is a space! (10 matches)
+We think for pos 11 msg 69 is a space! (24 matches)
+We think for pos 12 msg 95 is a space! (30 matches)
+We think for pos 13 msg 71 is a space! (10 matches)
+We think for pos 14 there are no msgs with a space.  Best candidate = 0 matches
+We think for pos 15 msg 69 is a space! (18 matches)
+We think for pos 16 msg 83 is a space! (18 matches)
+We think for pos 17 msg 95 is a space! (28 matches)
+We think for pos 18 msg 84 is a space! (10 matches)
+We think for pos 19 msg 72 is a space! (10 matches)
+We think for pos 20 msg 69 is a space! (18 matches)
+We think for pos 21 there are no msgs with a space.  Best candidate = 0 matches
+We think for pos 22 msg 75 is a space! (24 matches)
+We think for pos 23 msg 69 is a space! (9 matches)
+We think for pos 24 msg 89 is a space! (28 matches)
+We think for pos 25 msg 125 is a space! (18 matches)
+
+Derived Key: 41 4c 45 58 43 54 46 7b 44 45 52 45 5f 47 00 45 53 5f 54 48 45 00 4b 45 59 7d 
+
+44 65 61 72 20 46 72 69 69 6e 64 2c 20 54 27 69 73 20 74 69 6d 3a 20 49 20 75     Dear Friind, T'is tim: I u
+6e 64 65 72 73 74 6f 6f 68 20 6d 79 20 6d 26 73 74 61 6b 65 20 3e 6e 64 20 75     nderstooh my m&stake >nd u
+73 65 64 20 4f 6e 65 20 78 69 6d 65 20 70 2e 64 20 65 6e 63 72 26 70 74 69 6f     sed One xime p.d encr&ptio
+6e 20 73 63 68 65 6d 65 20 20 49 20 68 65 2e 72 64 20 74 68 61 2b 20 69 74 20     n scheme  I he.rd tha+ it 
+69 73 20 74 68 65 20 6f 62 6c 79 20 65 6e 2c 72 79 70 74 69 6f 31 20 6d 65 74     is the obly en,ryptio1 met
+68 6f 64 20 74 68 61 74 2c 69 73 20 6d 61 3b 68 65 6d 61 74 69 3c 61 6c 6c 79     hod that,is ma;hemati<ally
+20 70 72 6f 76 65 6e 20 78 6f 20 62 65 20 21 6f 74 20 63 72 61 3c 6b 65 64 20      proven xo be !ot cra<ked 
+65 76 65 72 20 69 66 20 78 68 65 20 6b 65 36 20 69 73 20 6b 65 2f 74 20 73 65     ever if xhe ke6 is ke/t se
+63 75 72 65 2c 20 4c 65 78 20 4d 65 20 6b 21 6f 77 20 69 66 20 26 6f 75 20 61     cure, Lex Me k!ow if &ou a
+67 72 65 65 20 77 69 74 64 20 6d 65 20 74 20 20 75 73 65 20 74 37 69 73 20 65     gree witd me t  use t7is e
+6e 63 72 79 70 74 69 6f 62 20 73 63 68 65 22 65 20 61 6c 77 61 26 73 2e     ncryptiob sche"e alwa&s.
+```
+
 It can't derive the key completely, so the user has to manually tweak it in about 3 spots to
 determine the proper key.
 
