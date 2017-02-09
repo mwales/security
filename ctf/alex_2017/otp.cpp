@@ -1,8 +1,57 @@
 #include<iostream>
 #include<vector>
+#include<map>
 #include<stdint.h>
 #include<stdlib.h>
 
+
+/**
+
+# To build and run the OTP solution:
+
+```
+g++ --std=c++11 otp.cpp -o otp
+cat otp_key.txt otp_msg.txt | ./otp
+```
+
+# Input Data
+
+This program processes hexadecimal text data, not raw binary (that is what the data format for the
+CTF was.
+
+The first line of data to provide to the program is a key (can be 0's at first)
+All the lines following are considered ciphertext
+
+# What does the program do?
+
+It first uses the provided key to try to decrypt the ciphertext, and it prints out the ASCII
+plaintext for the user
+
+It then tries to derive what it thinks the key is.  It determines what the each byte of the key is
+based on XOR-ing two cipher text messages together.  If there are spaces at that position, it can
+use that to determine what the key byte is for the data.  Non alphabetic characters sort of mess
+this process up
+
+It then tries to decrypte the ciphertext completely using the key it derived
+
+# How do you really use this?
+
+Create a dummy key
+
+```
+echo "0000" > dumb_key.txt
+cat dumb_key.txt otp_msg.txt | ./otp
+```
+
+The program will then generate a derived key.  But it may have positions in the key that are
+incorrectly deduced.  Copy this dereived key to key.txt.  Use your brain to fix the key by
+recognizing the correct text and updating the key as necessary.
+
+```
+cat key.txt otp_msg.txt | ./otp
+```
+
+*/
 
 std::vector<uint8_t> hex2Ascii(std::string hexString)
 {
@@ -58,48 +107,6 @@ std::string toAscii(std::vector<uint8_t> msg)
    return retVal;
 }
 
-bool isValidKeyByte(uint8_t keyByte, int position, std::vector<uint8_t> ciphertext)
-{
-   const uint8_t PRINTABLE_ASCII_BEGIN = 0x20; // space character
-   const uint8_t PRINTABLE_ASCII_END   = 0x7e; // tilde
-
-   if (position >= ciphertext.size())
-   {
-      //std::cerr << "Checking for keyByte=" << keyByte << " at pos=" << position
-      //          << " exceeds the lenth of CT " << ciphertext.size() << std::endl;
-      return true;
-   }
-
-   uint8_t ctByte = ciphertext[position];
-   uint8_t decodedByte = ctByte ^ keyByte;
-
-   if ( (decodedByte < PRINTABLE_ASCII_BEGIN) || (decodedByte > PRINTABLE_ASCII_END) )
-   {
-      return false;
-   }
-   else
-   {
-      if (decodedByte == 0x20)
-      {
-         std::cout << "KeyByte=" << (int) keyByte << "creates a space in position " << position << std::endl;
-      }
-      return true;
-   }
-}
-
-bool isValidKeyByteAllStrings(uint8_t keyByte, int position, std::vector<std::vector<uint8_t> > msgs)
-{
-   for(auto curMsg : msgs)
-   {
-      if (!isValidKeyByte(keyByte, position, curMsg))
-      {
-         return false;
-      }
-   }
-
-   return true;
-}
-
 int minMsgLength(std::vector<uint8_t> const & msgA, std::vector<uint8_t> const & msgB)
 {
    if (msgA.size() > msgB.size())
@@ -153,6 +160,16 @@ std::vector<uint8_t> xorTwoMsgs(std::vector<uint8_t> msgA, std::vector<uint8_t> 
    return retVal;
 }
 
+void decryptData(std::vector<std::vector<uint8_t> > msgs, std::vector<uint8_t> key)
+{
+   for(auto singleMsg : msgs)
+   {
+      // Print out this CT xor-ed with the current prospective key
+      std::vector<uint8_t> proposedPt = xorTwoMsgs(singleMsg, key);
+      std::cout << ascii2Hex(proposedPt) << "    " << toAscii(proposedPt) << std::endl;
+   }
+}
+
 
 int main()
 {
@@ -179,7 +196,7 @@ int main()
       rawMsgs.push_back(hex2Ascii(nextLine));
 
 
-      std::cout << "Read in " << nextLine << std::endl;
+      std::cout << "Ciphertext = " << nextLine << std::endl;
 
       // OTP will have to be as long as the longest message
       if (nextLine.length() / 2 > maxMessageLen)
@@ -195,57 +212,26 @@ int main()
 
    std::cout << "Max message len = " << maxMessageLen << std::endl;
 
+   std::cout << "********************************************************************************" << std::endl;
+   std::cout << "* Decrypting with key provided                                                 *" << std::endl;
+   std::cout << "********************************************************************************" << std::endl;
+
    std::cout << "Key (len = " << keyData.size() << ") = " << ascii2Hex(keyData)
-             << "    " << toAscii(keyData) << std::endl;
+             << "    " << toAscii(keyData) << std::endl << std::endl;
 
-   for(int msgIndex = 0; msgIndex < rawMsgs.size(); msgIndex++)
-   {
-      for(int otherIndex = 0; otherIndex < rawMsgs.size(); otherIndex++)
-      {
-         if (otherIndex == msgIndex)
-         {
-            // don't xor the same msg with itself, that would be dumb
-            continue;
-         }
+   decryptData(rawMsgs, keyData);
 
-         // XOR 2 messages, print them out, then XOR that sequence with all spaces, and then print that out
-         std::vector<uint8_t> plaintextsXored = xorTwoMsgs(rawMsgs[msgIndex], rawMsgs[otherIndex]);
-         std::cout << msgIndex << "^" << otherIndex << "=     " << ascii2Hex(plaintextsXored)
-                   << "   " << toAscii(plaintextsXored) << std::endl;
+   std::cout << std::endl;
+   std::cout << "********************************************************************************" << std::endl;
+   std::cout << "* Decrypting with derived key                                                  *" << std::endl;
+   std::cout << "********************************************************************************" << std::endl;
 
-         // All space msg
-         std::vector<uint8_t> allSpaces(minMsgLength(rawMsgs[msgIndex], rawMsgs[otherIndex]), 0x20);
-         std::vector<uint8_t> ptsXorSpaces = xorTwoMsgs(allSpaces, plaintextsXored);
-         std::cout << msgIndex << "^" << otherIndex << "^' ' =" << ascii2Hex(ptsXorSpaces)
-                   << "   " << toAscii(ptsXorSpaces) << std::endl;
-      }
-
-      // Print out this CT xor-ed with the current prospective key
-      std::vector<uint8_t> proposedPt = xorTwoMsgs(rawMsgs[msgIndex], keyData);
-      std::cout << msgIndex << " PT " << ascii2Hex(proposedPt)
-                << "    " << toAscii(proposedPt) << std::endl;
-
-   }
-
-   std::cout << "************************************************************" << std::endl;
-   std::cout << "************************************************************" << std::endl << std::endl;
-
-   std::vector<uint8_t> derivedKey;
-   for(int msgIndex = 0; msgIndex < rawMsgs.size(); msgIndex++)
-   {
-
-
-      // Print out this CT xor-ed with the current prospective key
-      std::vector<uint8_t> proposedPt = xorTwoMsgs(rawMsgs[msgIndex], keyData);
-      std::cout << msgIndex << " PT " << ascii2Hex(proposedPt)
-                << "    " << toAscii(proposedPt) << std::endl;
-
-   }
 
    // Try to determine the key
+   std::vector<uint8_t> derivedKey;
    for(int i = 0; i < maxMessageLen; i++)
    {
-      std::vector<int> candidatesForEachMsg;
+      std::map<uint8_t, int> candidatesForEachMsg;
       for(int msgA = 0; msgA < rawMsgs.size(); msgA++)
       {
          int candidateQty = 0;
@@ -258,29 +244,50 @@ int main()
             }
          }
 
-         candidatesForEachMsg.push_back(candidateQty);
-      }
+         uint8_t suggestedKeyValue = rawMsgs[msgA][i] ^ 0x20;
 
-      // Now, if any msg has more than 1/2 the number of msgs as candidates, lets consider it a space!
-      for(int msgCand = 0; msgCand < rawMsgs.size(); msgCand++)
-      {
-         if (candidatesForEachMsg[msgCand] > (rawMsgs.size() / 2) )
+         if (candidatesForEachMsg.find(suggestedKeyValue) == candidatesForEachMsg.end())
          {
-            std::cout << "We think for pos " << i << " msg " << msgCand << " is a space!" << std::endl;
-            derivedKey.push_back(rawMsgs[msgCand][i] ^ 0x20);
-            msgCand = rawMsgs.size(); // terminate this loop
+            // This is a new entry in the map
+            candidatesForEachMsg[suggestedKeyValue] = candidateQty;
+         }
+         else
+         {
+            // This is already a suggested value, add to the existing entry
+            candidatesForEachMsg[suggestedKeyValue] += candidateQty;
          }
       }
 
-      // None may match at all, if then, add 00 into key
-      if (derivedKey.size() == i)
+      // Now, lets find the best candidate, and any candidate to be considered must have 1/2 msgs or more
+      uint8_t bestCandidate = 0;
+      int bestCandidateQty = 0;
+      for(auto prospect : candidatesForEachMsg)
       {
-         std::cout << "We think for pos " << i << " there are no msgs with a space" << std::endl;
+         if (prospect.second > bestCandidateQty)
+         {
+            bestCandidateQty = prospect.second;
+            bestCandidate = prospect.first;
+         }
+      }
+
+      if (bestCandidateQty > (rawMsgs.size() / 2) )
+      {
+         std::cout << "We think for pos " << i << " ct " << (int) bestCandidate << " is a space! ("
+                   << bestCandidateQty << " matches)" << std::endl;
+         derivedKey.push_back(bestCandidate);
+      }
+      else
+      {
+         // None may match at all, if then, add 00 into key
+         std::cout << "We think for pos " << i << " there are no msgs with a space.  Best candidate = "
+                   << bestCandidateQty << " matches" << std::endl;
          derivedKey.push_back(0);
       }
    }
 
-   std::cout << "Derived Key: " << ascii2Hex(derivedKey) << std::endl;
+   std::cout << std::endl << "Derived Key: " << ascii2Hex(derivedKey) << std::endl << std::endl;
+
+   decryptData(rawMsgs, derivedKey);
 
    return 0;
 }
