@@ -167,7 +167,12 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
   # name used most often, which this dict will keep track of
   possibleNameList = dict()
 
-  c = ida_hexrays.decompile(startAddr)
+  try:
+    c = ida_hexrays.decompile(startAddr)
+  except ida_hexrays.DecompilationFailure:
+    print("Decompilation failure trying to decompile function at addr {}".format(hex(startAddr)))
+    return ""
+  
   for singleLine in str(c).split("\n"):
     leftJustifiedLine = singleLine.lstrip()
     if (leftJustifiedLine.startswith(searchString + "(")):
