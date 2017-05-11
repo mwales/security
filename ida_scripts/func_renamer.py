@@ -156,7 +156,70 @@ def analyzeSingleCall(lineOfC, paramIndex):
       #print "Single Arg:" + singleArg
       return analyzeSingleArg(singleArg.strip())
 
+# Returns a list of function calls (function name, open/close parens, args) in a one-line strings
+def findFuncCalls(sourceText, functionName):
+  retVal = []
+  curPos = 0
+  while sourceText.find(functionName, curPos) != -1:
+    curPos = sourceText.find(functionName, curPos)
+    # print("We found the function at byte: {}".format(curPos))
 
+    # Now we are going to iterate character by character to get all the function terms
+    
+    curCallText = functionName
+    curPos += len(functionName)
+    parensBalance = 0
+    while curPos < len(sourceText):
+      singleChar = sourceText[curPos]
+      # Check for single line comments
+      if (singleChar == '/') and (curPos+1 < len(sourceText)):
+        # Potential source code comment block
+	nextChar = sourceText[curPos+1]
+	if (nextChar == '/'):
+	  # This is a single line comment that we need to ignore
+          if ('\n' not in sourceText[curPos:]):
+	    # No more source that is parseable
+	    # print("Not parsing single line comment block that terminates source: {}".format(sourceText[curPos:]))
+	    return retVal
+	  else:
+	    commentTextEnd = sourceText.find('\n',curPos)
+	    commentText = sourceText[curPos:commentTextEnd]
+	    # print("Not parsing single line comment: {}".format(commentText))
+	    curPos += len(commentText)
+	    continue
+	if (nextChar == '*'):
+	  # Multi-line comment block!
+          commentTextEnd = sourceText.find('*/', curPos+2)
+	  if (commentTextEnd == -1):
+	    # print("Not parsing multi-line comment that terminates source: {}".format(sourceText[curPos:]))
+	    return retVal
+	  else:
+	    commentText = sourceText[curPos : commentTextEnd + 2]
+	    # print("Not parsing multi-line comment: {}".format(commentText))
+	    curPos += len(commentText)
+	    continue
+      
+      # Add the character to the working string (don't add newlines!)
+      if (singleChar != '\n'):
+        curCallText += singleChar
+      curPos += 1
+
+      if (singleChar == '('):
+	parensBalance += 1
+        # print("Found a parens open, parensBalance = {}".format(parensBalance))
+
+      if (singleChar == ')'):
+        parensBalance -= 1
+        # print("Found a parens closed, parensBalance = {}".format(parensBalance))
+
+	if (parensBalance == 0):
+	  # This is the end of the function parameters!
+          print("Function call complete text: {}".format(curCallText))
+	  retVal.append(curCallText)
+	  curCallText = ""
+          break
+
+  return retVal
 
 def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
   #print"Analyzing Function Name: {}".format(GetFunctionName(startAddr))
@@ -173,7 +236,7 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
     print("Decompilation failure trying to decompile function at addr {}".format(hex(startAddr)))
     return ""
   
-  for singleLine in str(c).split("\n"):
+  for singleLine in findFuncCalls(str(c), searchString):
     leftJustifiedLine = singleLine.lstrip()
     if (leftJustifiedLine.startswith(searchString + "(")):
       #print leftJustifiedLine
