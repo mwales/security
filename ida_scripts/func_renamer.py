@@ -118,28 +118,69 @@ def okClicked():
 # ********************************************************************************
 # Analysis Functions Below
 # ********************************************************************************
+def isHexString(text):
+  if len(text) <= 2:
+    return False
+
+  if (text[0:2] != "0x"):
+    return False
+
+  noPrefix = text[2:]
+
+  for singleChar in noPrefix:
+    if singleChar.isdigit():
+      continue
+
+    if ( (singleChar >= 'a') and (singleChar <= 'f') ):
+      continue
+
+    if ( (singleChar >= 'A') and (singleChar <= 'F') ):
+      continue
+
+    # Bad news if we get here
+    return False
+  
+  # All letters processed
+  return True
 
 def analyzeSingleArg(argText):
+  print("analyzeSingleArg analyzing {}".format(argText))
   # If the arg is quoted, it's a literal string, done!
   if (argText.find('"') != -1):
     # We found quotes, strip them off and return
-    return argText.strip('"')
+    retVal = argText.strip('"')
 
   # If it is an unknown variable, can we get the GetString(ea)
-  if (argText.startswith("&unk_")):
+  elif (argText.startswith("&unk_")):
     unkAddrText = argText[5:]
     unkAddrHex = int(unkAddrText, 16)
     #print("Decoding param ", unkAddrText, " to ", unkAddrHex)
 
     fName = GetString(unkAddrHex)
     # Lookup the symbol and try to figure out what it is
-    return fName
+    retVal = fName
+  
+  # If arg is just a base-10 number, then it is probably the address of a string
+  elif (argText.isdigit()):
+    memAddr = int(argText)
+    fName = GetString(memAddr)
+    retVal = fName
 
+  elif ( isHexString(argText) ):
+    memAddr = int(argText[2:], 16)
+    fName = GetString(memAddr)
+    retVal = fName
   else:
     return ""
 
+  if (retVal is None):
+    return ""
+  else:
+    return retVal
+
 
 def analyzeSingleCall(lineOfC, paramIndex):
+  print("analyzeSingleCall for arg {} = {}".format(paramIndex, lineOfC))
   beginParen = lineOfC.find("(")
   endParen   = lineOfC.rfind(")")
 
