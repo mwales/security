@@ -144,7 +144,7 @@ def isHexString(text):
   return True
 
 def analyzeSingleArg(argText):
-  print("analyzeSingleArg analyzing {}".format(argText))
+  # print("analyzeSingleArg analyzing {}".format(argText))
   # If the arg is quoted, it's a literal string, done!
   if (argText.find('"') != -1):
     # We found quotes, strip them off and return
@@ -180,7 +180,7 @@ def analyzeSingleArg(argText):
 
 
 def analyzeSingleCall(lineOfC, paramIndex):
-  print("analyzeSingleCall for arg {} = {}".format(paramIndex, lineOfC))
+  #print("analyzeSingleCall for arg {} = {}".format(paramIndex, lineOfC))
   beginParen = lineOfC.find("(")
   endParen   = lineOfC.rfind(")")
 
@@ -304,6 +304,16 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
   return fName
 
 def fixNameForIda(suggestedName):
+    # Look and see if the arg list is attached, if so, throw away
+    if ( suggestedName.find('(') != -1 ):
+        # print("Removing arg list from function name {}".format(suggestedName))
+        suggestedName = suggestedName[:suggestedName.index('(')]
+
+    # Any spaces?  If so, split on spaces and select last chunk
+    if ( suggestedName.find(' ') != -1 ):
+        chunks = suggestedName.split(' ')
+        suggestedName = chunks[-1]
+
     if (suggestedName.startswith("~")):
         suggestedName = suggestedName + "_destructor"
         suggestedName = suggestedName[1:]
