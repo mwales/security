@@ -154,48 +154,13 @@
 4560:  3a41           pop	r10
 4562:  3b41           pop	r11
 4564:  3041           ret
-                                                                      //****************************
-                                                                      // What the crap is all this stuff??
-                                                                      //****************************
-4566:  0a0a           .word	0x0a0a
-4568:  0040           br	pc
-456a:  2578           subc	@r8, r5
-456c:  205b           add	@r11, pc
-456e:  616c           addc.b	@r12, sp
-4570:  6c6f           addc.b	@r15, r12
-4572:  635d           .word	0x5d63
-4574:  205b           add	@r11, pc
-4576:  7020           jnz	#0x4658 <walk+0x9e>
-4578:  2578           subc	@r8, r5
-457a:  5d20           jnz	#0x4636 <walk+0x7c>
-457c:  5b6e 2025      addc.b	0x2520(r14), r11
-4580:  785d           add.b	@r13+, r8
-4582:  205b           add	@r11, pc
-4584:  7320           jnz	#0x466c <walk+0xb2>
-4586:  2578           subc	@r8, r5
-4588:  5d0a           .word	0x0a5d
-458a:  0020           jnz	#0x458c <printf+0x144>
-458c:  7b25           jz	#0x4884 <add_to_table+0x52>
-458e:  787d           subc.b	@r13+, r8
-4590:  205b           add	@r11, pc
-4592:  2000           .word	0x0020
-4594:  2578           subc	@r8, r5
-4596:  2000           .word	0x0020
-4598:  4025           jz	#0x481a <hash+0xc>
-459a:  7820           jnz	#0x468c <malloc+0x14>
-459c:  5b66 7265      addc.b	0x6572(r6), r11
-45a0:  6564           addc.b	@r4, r5
-45a2:  5d20           jnz	#0x465e <walk+0xa4>
-45a4:  5b70 2025      subc.b	0x2520(pc), r11
-45a8:  785d           add.b	@r13+, r8
-45aa:  205b           add	@r11, pc
-45ac:  6e20           jnz	#0x468a <malloc+0x12>
-45ae:  2578           subc	@r8, r5
-45b0:  5d20           jnz	#0x466c <walk+0xb2>
-45b2:  5b73           subc.b	#0x1, r11
-45b4:  2025           jz	#0x47f6 <create_hash_table+0x7e>
-45b6:  785d           add.b	@r13+, r8
-45b8:  0a00           .word	0x000a
+
+// Strings section
+4566 -                "\n\n"
+4569 -                "@%x [alloc] [p %x] [n %x] [x %x]\n"
+458b -                " {%x} [ "
+4594 -                "%x "
+4598 - 45b9           "@%x [freed] [p %x] [n %x] [s %x]"
 
 45ba <walk>
 45ba:  0b12           push	r11
@@ -664,153 +629,24 @@
 4a32:  3a41           pop	r10
 4a34:  3b41           pop	r11
 4a36:  3041           ret
-4a38:  5765 6c63      addc.b	0x636c(r5), r7
-4a3c:  6f6d           addc.b	@r13, r15
-4a3e:  6520           jnz	#0x4b0a <get_from_table+0x13e>
-4a40:  746f           addc.b	@r15+, r4
-4a42:  2074           subc	@r4, pc
-4a44:  6865           addc.b	@r5, r8
-4a46:  206c           addc	@r12, pc
-4a48:  6f63           addc.b	#0x2, r15
-4a4a:  6b20           jnz	#0x4b22 <get_from_table+0x156>
-4a4c:  636f           .word	0x6f63
-4a4e:  6e74           subc.b	@r4, r14
-4a50:  726f           addc.b	@r15+, sr
-4a52:  6c6c           addc.b	@r12, r12
-4a54:  6572           subc.b	#0x4, r5
-4a56:  2e00           .word	0x002e
-4a58:  596f 7520      addc.b	0x2075(r15), r9
-4a5c:  6361           .word	0x6163
-4a5e:  6e20           jnz	#0x4b3c <get_from_table+0x170>
-4a60:  6f70           subc.b	@pc, r15
-4a62:  656e           addc.b	@r14, r5
-4a64:  2074           subc	@r4, pc
-4a66:  6865           addc.b	@r5, r8
-4a68:  2064           addc	@r4, pc
-4a6a:  6f6f           addc.b	@r15, r15
-4a6c:  7220           jnz	#0x4b52 <get_from_table+0x186>
-4a6e:  6279           subc.b	@r9, sr
-4a70:  2065           addc	@r5, pc
-4a72:  6e74           subc.b	@r4, r14
-4a74:  6572           subc.b	#0x4, r5
-4a76:  696e           addc.b	@r14, r9
-4a78:  6720           jnz	#0x4b48 <get_from_table+0x17c>
-4a7a:  2761           addc	@sp, r7
-4a7c:  6363           .word	0x6363
-4a7e:  6573           subc.b	#0x2, r5
-4a80:  7320           jnz	#0x4b68 <run+0x2>
-4a82:  5b79 6f75      subc.b	0x756f(r9), r11
-4a86:  7220           jnz	#0x4b6c <run+0x6>
-4a88:  6e61           addc.b	@sp, r14
-4a8a:  6d65           addc.b	@r5, r13
-4a8c:  5d20           jnz	#0x4b48 <get_from_table+0x17c>
-4a8e:  5b70 696e      subc.b	0x6e69(pc), r11
-4a92:  5d27           jz	#0x494e <rehash+0x7a>
-4a94:  0000           .word	0x0000
-4a96:  4e6f           addc.b	r15, r14
-4a98:  2073           subc	#0x2, pc
-4a9a:  7563           addc.b	#-0x1, r5
-4a9c:  6820           jnz	#0x4b6e <run+0x8>
-4a9e:  626f           addc.b	@r15, sr
-4aa0:  782e           jc	#0x4792 <create_hash_table+0x1a>
-4aa2:  0041           br	sp
-4aa4:  6363           .word	0x6363
-4aa6:  6573           subc.b	#0x2, r5
-4aa8:  7320           jnz	#0x4b90 <run+0x2a>
-4aaa:  6772           subc.b	#0x4, r7
-4aac:  616e           addc.b	@r14, sp
-4aae:  7465           addc.b	@r5+, r4
-4ab0:  642e           jc	#0x477a <create_hash_table+0x2>
-4ab2:  0041           br	sp
-4ab4:  6363           .word	0x6363
-4ab6:  6573           subc.b	#0x2, r5
-4ab8:  7320           jnz	#0x4ba0 <run+0x3a>
-4aba:  6772           subc.b	#0x4, r7
-4abc:  616e           addc.b	@r14, sp
-4abe:  7465           addc.b	@r5+, r4
-4ac0:  643b           jl	#0x498a <rehash+0xb6>
-4ac2:  2062           addc	#0x4, pc
-4ac4:  7574           subc.b	@r4+, r5
-4ac6:  2061           addc	@sp, pc
-4ac8:  6363           .word	0x6363
-4aca:  6f75           subc.b	@r5, r15
-4acc:  6e74           subc.b	@r4, r14
-4ace:  206e           addc	@r14, pc
-4ad0:  6f74           subc.b	@r4, r15
-4ad2:  2061           addc	@sp, pc
-4ad4:  6374           .word	0x7463
-4ad6:  6976           subc.b	@r6, r9
-4ad8:  6174           subc.b	@r4, sp
-4ada:  6564           addc.b	@r4, r5
-4adc:  2e00           .word	0x002e
-4ade:  4163           adc.b	sp
-4ae0:  6565           addc.b	@r5, r5
-4ae2:  7373           .word	0x7373
-4ae4:  2064           addc	@r4, pc
-4ae6:  656e           addc.b	@r14, r5
-4ae8:  6965           addc.b	@r5, r9
-4aea:  6400           .word	0x0064
-4aec:  4361           .word	0x6143
-4aee:  6e20           jnz	#0x4bcc <run+0x66>
-4af0:  6e6f           addc.b	@r15, r14
-4af2:  7420           jnz	#0x4bdc <run+0x76>
-4af4:  6861           addc.b	@sp, r8
-4af6:  7665           addc.b	@r5+, r6
-4af8:  2061           addc	@sp, pc
-4afa:  2070           subc	@pc, pc
-4afc:  696e           addc.b	@r14, r9
-4afe:  2077           subc	@r7, pc
-4b00:  6974           subc.b	@r4, r9
-4b02:  6820           jnz	#0x4bd4 <run+0x6e>
-4b04:  6869           addc.b	@r9, r8
-4b06:  6768           addc.b	@r8, r7
-4b08:  2062           addc	#0x4, pc
-4b0a:  6974           subc.b	@r4, r9
-4b0c:  2073           subc	#0x2, pc
-4b0e:  6574           subc.b	@r4, r5
-4b10:  2e00           .word	0x002e
-4b12:  5573           subc.b	#0x1, r5
-4b14:  6572           subc.b	#0x4, r5
-4b16:  2061           addc	@sp, pc
-4b18:  6c72           subc.b	#0x4, r12
-4b1a:  6561           addc.b	@sp, r5
-4b1c:  6479           subc.b	@r9, r4
-4b1e:  2068           addc	@r8, pc
-4b20:  6173           subc.b	#0x2, sp
-4b22:  2061           addc	@sp, pc
-4b24:  6e20           jnz	#0x4c02 <run+0x9c>
-4b26:  6163           addc.b	#0x2, sp
-4b28:  636f           .word	0x6f63
-4b2a:  756e           addc.b	@r14+, r5
-4b2c:  742e           jc	#0x4816 <hash+0x8>
-4b2e:  0041           br	sp
-4b30:  6464           addc.b	@r4, r4
-4b32:  696e           addc.b	@r14, r9
-4b34:  6720           jnz	#0x4c04 <run+0x9e>
-4b36:  7573           subc.b	#-0x1, r5
-4b38:  6572           subc.b	#0x4, r5
-4b3a:  2061           addc	@sp, pc
-4b3c:  6363           .word	0x6363
-4b3e:  6f75           subc.b	@r5, r15
-4b40:  6e74           subc.b	@r4, r14
-4b42:  2025           jz	#0x4d84 <strcmp+0x8>
-4b44:  7320           jnz	#0x4c2c <run+0xc6>
-4b46:  7769           addc.b	@r9+, r7
-4b48:  7468           addc.b	@r8+, r4
-4b4a:  2070           subc	@pc, pc
-4b4c:  696e           addc.b	@r14, r9
-4b4e:  2025           jz	#0x4d90 <strcmp+0x14>
-4b50:  782e           jc	#0x4842 <add_to_table+0x10>
-4b52:  0a00           .word	0x000a
-4b54:  496e           addc.b	r14, r9
-4b56:  7661           addc.b	@sp+, r6
-4b58:  6c69           addc.b	@r9, r12
-4b5a:  6420           jnz	#0x4c24 <run+0xbe>
-4b5c:  636f           .word	0x6f63
-4b5e:  6d6d           addc.b	@r13, r13
-4b60:  616e           addc.b	@r14, sp
-4b62:  642e           jc	#0x482c <hash+0x1e>
-...
+
+// Another strings section
+4a38 - 4a57:          "Welcome to the lock controller."
+4a58 - 4a94           "You can open the door by entering 'access [your name] [pin]"
+4a95                  ""
+4a96 - 4aa2           "No such box"
+4aa3 - 4ab2           "Access granted."
+4ab3 - 4add           "Access granted; but account not activated."
+4ade - 4aeb           "Aceess denied"
+4aec - 4b11           "Can not have a pin with high bit set"
+4b12 - 4b2e           "User already has an account."
+4b2f - 4b53           "Adding user account %s with pin %x."
+4b54 - 4b64           "Invalid command."j
+
+
+// Stack structure for run:
+SP + 0000 - SP + 05ff   = something
+
 4b66 <run>
 4b66:  0b12           push	r11
 4b68:  0a12           push	r10
@@ -822,21 +658,21 @@
 4b78:  3f40 0300      mov	#0x3, r15
 4b7c:  b012 7847      call	#0x4778 <create_hash_table>           // create_hash_table(3,5)
 4b80:  084f           mov	r15, r8                               // hash table location
-4b82:  3f40 384a      mov	#0x4a38, r15
+4b82:  3f40 384a      mov	#0x4a38, r15                          // "Welcome to the lock controller."
 4b86:  b012 504d      call	#0x4d50 <puts>
-4b8a:  3f40 584a      mov	#0x4a58, r15
+4b8a:  3f40 584a      mov	#0x4a58, r15                          // "You can open the door by entering 'access [your name] [pin]" 
 4b8e:  b012 504d      call	#0x4d50 <puts>
-4b92:  3f40 954a      mov	#0x4a95, r15
+4b92:  3f40 954a      mov	#0x4a95, r15                          // ""
 4b96:  b012 504d      call	#0x4d50 <puts>
 4b9a:  0e43           clr	r14
 4b9c:  3740 ff05      mov	#0x5ff, r7
-4ba0:  053c           jmp	#0x4bac <run+0x46>
-4ba2:  0f41           mov	sp, r15
-4ba4:  0f5e           add	r14, r15
-4ba6:  cf43 0000      mov.b	#0x0, 0x0(r15)
-4baa:  1e53           inc	r14
-4bac:  079e           cmp	r14, r7
-4bae:  f937           jge	#0x4ba2 <run+0x3c>
+4ba0:  053c           jmp	#0x4bac <run+0x46>                    // This loop zeros the contents of the stack frame
+  4ba2:  0f41           mov	sp, r15
+  4ba4:  0f5e           add	r14, r15
+  4ba6:  cf43 0000      mov.b	#0x0, 0x0(r15)
+  4baa:  1e53           inc	r14
+  4bac:  079e           cmp	r14, r7
+  4bae:  f937           jge	#0x4ba2 <run+0x3c>
 4bb0:  3e40 5005      mov	#0x550, r14
 4bb4:  0f41           mov	sp, r15
 4bb6:  b012 404d      call	#0x4d40 <getsn>
@@ -963,7 +799,11 @@
 4ce4:  4f93           tst.b	r15
 4ce6:  6b23           jnz	#0x4bbe <run+0x58>
 4ce8:  0e43           clr	r14
-4cea:  603f           jmp	#0x4bac <run+0x46>
+4cea:  603f           jmp	#0x4bac <run+0x46>                    // Jumps back to the top of loop where stack frame is being cleared
+                                                                      //   and more user input accepted
+
+
+
 4cec <INT>
 4cec:  1e41 0200      mov	0x2(sp), r14
 4cf0:  0212           push	sr
