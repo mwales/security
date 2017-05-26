@@ -8,6 +8,8 @@
 #include <QProcess>
 #include <QObject>
 
+#include "QmpSocketMgr.h"
+
 class QemuProcessManager : public QObject
 {
     Q_OBJECT
@@ -42,6 +44,10 @@ public:
     int getNumberOfPortsPerInstance();
 
     void setStartingPortNumber(uint16_t portNumber);
+
+signals:
+
+    void connectToQmp();
 
 public slots:
 
@@ -97,6 +103,8 @@ protected:
     uint16_t theStartingPortNumber;
 
     bool theHumanInterfaceEnabled;
+
+    QmpSocketMgr* theQmpController;
 
     // todo: other processors besides i386 (query machines switch of qemu)
 

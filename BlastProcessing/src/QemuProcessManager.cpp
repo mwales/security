@@ -58,6 +58,9 @@ void QemuProcessManager::startEmulator()
     {
         qWarning() << "Process failed to start";
     }
+
+    theQmpController = new QmpSocketMgr("127.0.0.1", theStartingPortNumber, this);
+
 }
 
 void QemuProcessManager::stopEmulator()
