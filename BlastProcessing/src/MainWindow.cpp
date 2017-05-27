@@ -4,11 +4,16 @@
 #include <QFontDatabase>
 #include <QtDebug>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <QDir>
+
+const QString VM_FILE_SETTING_KEY = "last_used_vm_disk";
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    theProcessManager(nullptr)
+    theProcessManager(nullptr),
+    theSettings("github-mwales", "blastprocessing")
 {
     ui->setupUi(this);
 
@@ -18,12 +23,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
     theProcessManager = new QemuProcessManager(this);
 
-    connect(ui->theStartButton, &QPushButton::clicked,
-            this, &MainWindow::startButtonPressed);
-    connect(ui->theAboutQtButton, &QPushButton::clicked,
-            this, &MainWindow::helpButtonPressed);
+    connect(ui->theStartButton,    &QPushButton::clicked,
+            this,                  &MainWindow::startButtonPressed);
+    connect(ui->theAboutQtButton,  &QPushButton::clicked,
+            this,                  &MainWindow::helpButtonPressed);
+    connect(ui->theSelectVmButton, &QPushButton::clicked,
+            this,                  &MainWindow::selectVmButtonPressed);
 
-
+    if (theSettings.contains(VM_FILE_SETTING_KEY))
+    {
+        ui->theVmLineEdit->setText(theSettings.value(VM_FILE_SETTING_KEY).toString());
+    }
 }
 
 MainWindow::~MainWindow()
@@ -59,7 +69,13 @@ void MainWindow::fixBlastProcessingLogo()
 
 void MainWindow::startButtonPressed()
 {
-    theProcessManager->addDriveFile("/media/mwales/store3tb/VMs/QemuQnx/Qnx641.qcow2");
+    if (ui->theVmLineEdit->text().isEmpty())
+    {
+        QMessageBox::critical(this, "No VM Disk Selected", "You must select a VM file before starting QEMU", QMessageBox::Ok);
+        return;
+    }
+
+    theProcessManager->addDriveFile(ui->theVmLineEdit->text());
     theProcessManager->setProcessorType("i386");
     theProcessManager->startEmulator();
 }
@@ -67,4 +83,23 @@ void MainWindow::startButtonPressed()
 void MainWindow::helpButtonPressed()
 {
     QMessageBox::aboutQt(this, "About Qt");
+}
+
+void MainWindow::selectVmButtonPressed()
+{
+    QString vmFile = QFileDialog::getOpenFileName(this,
+                                                  "Select VM Disk File",
+                                                  QDir::homePath(),
+                                                  "QEMU Disk (*.qcow2)");
+
+    if (!vmFile.isEmpty())
+    {
+        qDebug() << "Selected VM File:" << vmFile;
+
+        ui->theVmLineEdit->setText(vmFile);
+
+        theSettings.setValue(VM_FILE_SETTING_KEY, QVariant(vmFile));
+
+    }
+
 }

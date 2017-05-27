@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSettings>
 #include "QemuProcessManager.h"
 
 namespace Ui {
@@ -22,6 +23,8 @@ public slots:
 
     void helpButtonPressed();
 
+    void selectVmButtonPressed();
+
 private:
 
     void fixBlastProcessingLogo();
@@ -29,6 +32,8 @@ private:
     Ui::MainWindow *ui;
 
     QemuProcessManager* theProcessManager;
+
+    QSettings theSettings;
 };
 
 #endif // MAINWINDOW_H
