@@ -2,6 +2,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QJsonValue>
 
 SocketCommandInterface::SocketCommandInterface(QString host, int portNumber, QObject* parent):
     theSocket(nullptr),
@@ -321,6 +322,7 @@ void SocketCommandInterface::parseJsonData(QByteArray rawData)
     if (jo.contains("QMP"))
     {
         qDebug() << "Handle server greeting";
+        processServerGreeting(jo);
         return;
     }
 
@@ -337,6 +339,68 @@ void SocketCommandInterface::parseJsonData(QByteArray rawData)
     }
 
     qWarning() << "Received a JSON object, but don't know how to parse!";
+
+
+
+
+}
+
+void SocketCommandInterface::processServerGreeting(QJsonObject const & msg)
+{
+    // We will retrieve the version of Qemu from the greeting
+
+    const QString QMP_GREETING_KEY = "QMP";
+    const QString QMP_VERSION_KEY = "version";
+    const QString QMP_VERSION_ARRAY = "qemu";
+
+    const QString QMP_VERSION_MAJOR = "major";
+    const QString QMP_VERSION_MINOR = "minor";
+    const QString QMP_VERSION_MICRO = "micro";
+
+    QStringList keys = msg.keys();
+
+    qDebug() << "Keys for the greetnig:" << keys;
+
+    QJsonValue qmpVal = msg[QMP_GREETING_KEY];
+
+    if (!qmpVal.isObject())
+    {
+        qWarning() << "QMP Greeting QMP Value not the expected object type";
+        return;
+    }
+
+    QJsonObject qmpObj = qmpVal.toObject();
+
+    if (!qmpObj.contains(QMP_VERSION_KEY) || !qmpObj[QMP_VERSION_KEY].isObject())
+    {
+        qWarning() << QMP_GREETING_KEY << "." << QMP_VERSION_KEY << "is not the expected object type";
+        return;
+    }
+
+    QJsonObject greetingVerObj = qmpObj[QMP_VERSION_KEY].toObject();
+
+    if (!greetingVerObj.contains(QMP_VERSION_ARRAY) || !greetingVerObj[QMP_VERSION_ARRAY].isObject())
+    {
+        qWarning() << QMP_GREETING_KEY << "." << QMP_VERSION_KEY << "." << QMP_VERSION_ARRAY <<  "is not the expected object type";
+        return;
+    }
+
+    QJsonObject qemuVerObj = greetingVerObj[QMP_VERSION_ARRAY].toObject();
+
+    int major, minor, micro;
+    if ( !qemuVerObj.contains(QMP_VERSION_MAJOR) ||
+         !qemuVerObj.contains(QMP_VERSION_MINOR) ||
+         !qemuVerObj.contains(QMP_VERSION_MICRO) )
+    {
+        qWarning() << "Greeting parsing failed at major, minor, and micro version parsing";
+        return;
+    }
+
+    major = qemuVerObj[QMP_VERSION_MAJOR].toInt(-1);
+    minor = qemuVerObj[QMP_VERSION_MINOR].toInt(-1);
+    micro = qemuVerObj[QMP_VERSION_MICRO].toInt(-1);
+
+    qDebug() << QString("Qemu Version: %1.%2.%3").arg(major).arg(minor).arg(micro);
 
 
 

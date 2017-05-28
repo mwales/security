@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QTimer>
+#include <QJsonObject>
 
 class SocketCommandInterface : public QObject
 {
@@ -46,6 +47,8 @@ protected:
     void preparseJsonData();
 
     void parseJsonData(QByteArray rawData);
+
+    void processServerGreeting(QJsonObject const & msg);
 
     QTcpSocket* theSocket;
 
