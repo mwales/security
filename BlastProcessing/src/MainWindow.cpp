@@ -25,6 +25,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->theStartButton,    &QPushButton::clicked,
             this,                  &MainWindow::startButtonPressed);
+
+    connect(ui->theStopButton,     &QPushButton::clicked,
+            theProcessManager,     &QemuProcessManager::stopEmulator);
+    connect(ui->theContinueButton, &QPushButton::clicked,
+            theProcessManager,     &QemuProcessManager::continueEmulator);
+    connect(ui->theResetButton,    &QPushButton::clicked,
+            theProcessManager,     &QemuProcessManager::resetEmulator);
+    connect(ui->thePowerOffButton, &QPushButton::clicked,
+            theProcessManager,     &QemuProcessManager::powerEmulatorOff);
+
     connect(ui->theAboutQtButton,  &QPushButton::clicked,
             this,                  &MainWindow::helpButtonPressed);
     connect(ui->theSelectVmButton, &QPushButton::clicked,

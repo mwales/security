@@ -56,6 +56,10 @@ public slots:
 
     void stopEmulator();
 
+    void continueEmulator();
+
+    void resetEmulator();
+
     void saveEmulatorState(QString filename);
 
     void loadEmulatorState(QString filename);

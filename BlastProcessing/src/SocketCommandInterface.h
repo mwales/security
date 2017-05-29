@@ -27,6 +27,12 @@ signals:
 
     void errorMessage(QString msg);
 
+    void greetingMessage(QJsonObject obj);
+
+    void eventMessage(QJsonObject obj);
+
+    void returnMessage(QJsonObject obj);
+
 protected slots:
 
 
@@ -47,8 +53,6 @@ protected:
     void preparseJsonData();
 
     void parseJsonData(QByteArray rawData);
-
-    void processServerGreeting(QJsonObject const & msg);
 
     QTcpSocket* theSocket;
 

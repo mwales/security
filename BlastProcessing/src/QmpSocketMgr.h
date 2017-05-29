@@ -5,6 +5,7 @@
 #include <QThread>
 #include <QString>
 #include <stdint.h>
+#include <QJsonObject>
 
 class SocketCommandInterface;
 
@@ -36,6 +37,16 @@ public:
     bool loadSnapshot(QString snapshotName);
 
     // need to create signals thing we need to send to SocketCommandInterface
+
+public slots:
+
+    void handleQmpGreeting(QJsonObject msg);
+
+    void handleQmpEvent(QJsonObject obj);
+
+    void handleQmpReturn(QJsonObject obj);
+
+
 signals:
 
     void connectSocket();
@@ -49,6 +60,23 @@ signals:
 
 
 protected:
+
+    void sendQmpCapabilities();
+
+    bool sendNoParamNoRespCommand(QString command);
+
+    enum class QmpState
+    {
+        NOT_CONNECTED,
+        WAITING_FOR_GREETING,
+        WAITING_FOR_CAPABILITY_RESPONSE,
+        READY,
+        WAITING_FOR_RESPONSE
+    };
+
+    QmpState theState;
+
+
 
     QThread* theSocketThread;
 

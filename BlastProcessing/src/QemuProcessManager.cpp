@@ -65,22 +65,61 @@ void QemuProcessManager::startEmulator()
 
 void QemuProcessManager::stopEmulator()
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
+    if (!theQmpController->sendStop())
+    {
+        qDebug() << "Error from QMP when sending the stop command";
+    }
+    else
+    {
+        qDebug() << "Stop command sent successfully";
+    }
 }
+
+void QemuProcessManager::continueEmulator()
+{
+    if (!theQmpController->sendContinue())
+    {
+        qDebug() << "Error from QMP when sending the continue command";
+    }
+    else
+    {
+        qDebug() << "Continue command sent successfully";
+    }
+}
+
+void QemuProcessManager::resetEmulator()
+{
+    if (!theQmpController->sendReset())
+    {
+        qDebug() << "Error from QMP when sending the reset command";
+    }
+    else
+    {
+        qDebug() << "Reset command sent successfully";
+    }
+}
+
 
 void QemuProcessManager::saveEmulatorState(QString filename)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
+    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << filename << ")";
 }
 
 void QemuProcessManager::loadEmulatorState(QString filename)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
+    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << filename << ")";
 }
 
 void QemuProcessManager::powerEmulatorOff()
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
+    if (!theQmpController->sendPowerOff())
+    {
+        qDebug() << "Error from QMP when sending the power off command";
+    }
+    else
+    {
+        qDebug() << "Power off command sent successfully";
+    }
 }
 
 // Emulation setup options
@@ -104,7 +143,7 @@ bool QemuProcessManager::setProcessorType(QString processorName)
 
 bool QemuProcessManager::setNetworkAdapterType(QString networkAdapterName)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
+    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << networkAdapterName << ")";
     return false;
 }
 
@@ -117,7 +156,7 @@ void QemuProcessManager::enableHumanInterfaceSocket(bool enable)
 
 bool QemuProcessManager::setOtherOptions(QString otherOptions)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
+    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << otherOptions << ")";
     return false;
 }
 
