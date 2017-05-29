@@ -27,6 +27,7 @@ public:
 
     bool screendump(QString filename);
 
+    bool sendQuit();
     bool sendStop();
     bool sendPowerOff();
     bool sendContinue();

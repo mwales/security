@@ -27,10 +27,19 @@ signals:
 
     void errorMessage(QString msg);
 
+    /**
+     * Received JSON data from socket, the JSON object has a key "QMP" defined
+     */
     void greetingMessage(QJsonObject obj);
 
+    /**
+     * Received JSON data from socket, the JSON object has a key "event" defined
+     */
     void eventMessage(QJsonObject obj);
 
+    /**
+     * Received JSON data from socket, the JSON object has a key "return" defined
+     */
     void returnMessage(QJsonObject obj);
 
 protected slots:

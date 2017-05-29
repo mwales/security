@@ -15,6 +15,17 @@ QemuProcessManager::QemuProcessManager(QObject *parent):
 QemuProcessManager::~QemuProcessManager()
 {
     qDebug() << __PRETTY_FUNCTION__;
+
+    stopEmulator();
+
+    if (theProcess->waitForFinished(3000))
+    {
+        qDebug() << "QEMU exitted gracefully";
+    }
+    else
+    {
+        qDebug() << "Told QEMU to quit, but it won't listen!!!";
+    }
     // theProcess cleaned up by QObject
 }
 
@@ -64,6 +75,18 @@ void QemuProcessManager::startEmulator()
 }
 
 void QemuProcessManager::stopEmulator()
+{
+    if(!theQmpController->sendQuit())
+    {
+        qDebug() << "Error from QMP when sending the quit command";
+    }
+    else
+    {
+        qDebug() << "Quit command sent successfully";
+    }
+}
+
+void QemuProcessManager::pauseEmulator()
 {
     if (!theQmpController->sendStop())
     {

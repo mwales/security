@@ -7,6 +7,12 @@
 const QString EXECUTE_KEY = "execute";
 const QString RETURN_KEY = "return";
 
+const QString EVENT_KEY  = "event";
+const QString EVENT_TS_KEY = "timestamp";
+const QString EVENT_TS_SECS = "seconds";
+const QString EVENT_TS_USECS = "microseconds";
+
+
 QmpSocketMgr::QmpSocketMgr(QString host, uint16_t portNumber, QObject* parent):
     QObject(parent),
     theState(QmpState::NOT_CONNECTED)
@@ -45,6 +51,14 @@ QmpSocketMgr::~QmpSocketMgr()
     emit closeSocket();
 
     theSocketThread->exit();
+    if (theSocketThread->wait(3000))
+    {
+        qDebug() << "The socket thread exitted gracefully";
+    }
+    else
+    {
+        qDebug() << "The socket thread didn't exit gracefully";
+    }
 
     delete theSocketThread;
 
@@ -79,6 +93,11 @@ bool QmpSocketMgr::screendump(QString filename)
 {
     qDebug() << __PRETTY_FUNCTION__ << "(" << filename << ")";
     return false;
+}
+
+bool QmpSocketMgr::sendQuit()
+{
+    return sendNoParamNoRespCommand("quit");
 }
 
 bool QmpSocketMgr::sendStop()
@@ -183,7 +202,49 @@ void QmpSocketMgr::handleQmpGreeting(QJsonObject msg)
 
 void QmpSocketMgr::handleQmpEvent(QJsonObject obj)
 {
+    // QMP events are defined as follows
+    //  object obj {
+    //    string event;
+    //    object timestamp {
+    //      int seconds;
+    //      int microseconds;
+    //    };
+    //  };
+
+
     qDebug() << __PRETTY_FUNCTION__ << " Keys:" << obj.keys();
+
+    if (!obj[EVENT_KEY].isString())
+    {
+        qWarning() << "QMP Event value is not the expected string type";
+        return;
+    }
+
+    QString eventText = obj[EVENT_KEY].toString();
+
+    if (!obj.contains(EVENT_TS_KEY) || !obj[EVENT_TS_KEY].isObject())
+    {
+        qWarning() << "QMP Event does not have the expected timestamp object";
+        return;
+    }
+
+    QJsonObject ts = obj[EVENT_TS_KEY].toObject();
+
+    if (!ts.contains(EVENT_TS_SECS) || !ts.contains(EVENT_TS_USECS))
+    {
+        qWarning() << "QMP event does not have the expected seconds and microseconds members in the timestamp event object";
+        return;
+    }
+
+    int seconds = ts[EVENT_TS_SECS].toInt(0);
+    int usecs   = ts[EVENT_TS_USECS].toInt(0);
+
+    QString usecsPadding = "0";
+    int numPaddingDigits = 6 - QString::number(usecs).length();
+
+    QString displayText = QString("EVENT> %1.%2%3 %4").arg(seconds).arg(usecsPadding.repeated(numPaddingDigits)).arg(usecs).arg(eventText);
+
+    qDebug() << displayText;
 }
 
 void QmpSocketMgr::handleQmpReturn(QJsonObject obj)

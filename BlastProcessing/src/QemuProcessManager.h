@@ -54,16 +54,33 @@ public slots:
     // Emulation control functions
     void startEmulator();
 
+    /**
+     * Stops the QEMU process via the quit command
+     */
     void stopEmulator();
 
+    /**
+     * Pauses emulation by sending QEMU the stop command, can be resumed again
+     */
+    void pauseEmulator();
+
+    /**
+     * Tells QEMU to resume emulation after a pause was executed
+     */
     void continueEmulator();
 
+    /**
+     * Tells QEMU to reset the emulator
+     */
     void resetEmulator();
 
     void saveEmulatorState(QString filename);
 
     void loadEmulatorState(QString filename);
 
+    /**
+     * @brief powerEmulatorOff
+     */
     void powerEmulatorOff();
 
 protected slots:
