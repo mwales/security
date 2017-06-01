@@ -25,6 +25,8 @@ public slots:
 
     void selectVmButtonPressed();
 
+    void screenshotButtonPressed();
+
 private:
 
     void fixBlastProcessingLogo();

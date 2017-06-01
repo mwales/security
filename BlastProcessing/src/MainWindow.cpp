@@ -39,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
             this,                  &MainWindow::helpButtonPressed);
     connect(ui->theSelectVmButton, &QPushButton::clicked,
             this,                  &MainWindow::selectVmButtonPressed);
+    connect(ui->theScreenCapButton,&QPushButton::clicked,
+            this,                  &MainWindow::screenshotButtonPressed);
 
     if (theSettings.contains(VM_FILE_SETTING_KEY))
     {
@@ -112,4 +114,20 @@ void MainWindow::selectVmButtonPressed()
 
     }
 
+}
+
+void MainWindow::screenshotButtonPressed()
+{
+    QString destName = QFileDialog::getSaveFileName(this,
+                                                    "Choose screenshot filename",
+                                                    QDir::homePath(),
+                                                    "Portable PixMap (*.ppm)");
+
+    if (destName.isEmpty())
+    {
+        // User canceled
+        return;
+    }
+
+    theProcessManager->screenShot(destName);
 }

@@ -83,6 +83,8 @@ public slots:
      */
     void powerEmulatorOff();
 
+    void screenShot(QString filename);
+
 protected slots:
 
     void qemuStandardOutputReady();

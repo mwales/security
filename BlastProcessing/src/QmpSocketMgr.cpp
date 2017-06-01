@@ -4,8 +4,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
-const QString EXECUTE_KEY = "execute";
-const QString RETURN_KEY = "return";
+const QString EXECUTE_KEY   = "execute";
+const QString RETURN_KEY    = "return";
+const QString ARGUMENTS_KEY = "arguments";
 
 const QString EVENT_KEY  = "event";
 const QString EVENT_TS_KEY = "timestamp";
@@ -92,7 +93,31 @@ QString QmpSocketMgr::queryVnc()
 bool QmpSocketMgr::screendump(QString filename)
 {
     qDebug() << __PRETTY_FUNCTION__ << "(" << filename << ")";
-    return false;
+
+    if (theState != QmpState::READY)
+    {
+        qDebug() << "QEMU QMP interface not ready to send screendump command";
+        return false;
+    }
+
+    QJsonObject jo;
+    QJsonValue cmdName("screendump");
+
+    jo.insert(EXECUTE_KEY, cmdName);
+
+    QJsonObject argObj;
+    argObj.insert("filename", QJsonValue(filename));
+
+    jo.insert(ARGUMENTS_KEY, argObj);
+
+    QJsonDocument jdoc;
+    jdoc.setObject(jo);
+
+    qDebug() << "About to send screedump command";
+
+    emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
+    theState = QmpState::WAITING_FOR_RESPONSE;
+    return true;
 }
 
 bool QmpSocketMgr::sendQuit()

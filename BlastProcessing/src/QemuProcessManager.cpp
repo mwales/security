@@ -7,7 +7,8 @@ QemuProcessManager::QemuProcessManager(QObject *parent):
     theProcess(nullptr),
     theMemoryMb(256),
     theStartingPortNumber(20000),
-    theHumanInterfaceEnabled(true)
+    theHumanInterfaceEnabled(true),
+    theQmpController(nullptr)
 {
 
 }
@@ -16,15 +17,18 @@ QemuProcessManager::~QemuProcessManager()
 {
     qDebug() << __PRETTY_FUNCTION__;
 
-    stopEmulator();
+    if (theQmpController && theProcess)
+    {
+        stopEmulator();
 
-    if (theProcess->waitForFinished(3000))
-    {
-        qDebug() << "QEMU exitted gracefully";
-    }
-    else
-    {
-        qDebug() << "Told QEMU to quit, but it won't listen!!!";
+        if (theProcess->waitForFinished(3000))
+        {
+            qDebug() << "QEMU exitted gracefully";
+        }
+        else
+        {
+            qDebug() << "Told QEMU to quit, but it won't listen!!!";
+        }
     }
     // theProcess cleaned up by QObject
 }
@@ -76,6 +80,11 @@ void QemuProcessManager::startEmulator()
 
 void QemuProcessManager::stopEmulator()
 {
+    if (theQmpController == nullptr)
+    {
+        return;
+    }
+
     if(!theQmpController->sendQuit())
     {
         qDebug() << "Error from QMP when sending the quit command";
@@ -142,6 +151,18 @@ void QemuProcessManager::powerEmulatorOff()
     else
     {
         qDebug() << "Power off command sent successfully";
+    }
+}
+
+void QemuProcessManager::screenShot(QString filename)
+{
+    if (!theQmpController->screendump(filename))
+    {
+        qDebug() << "Error from QMP when sending the screenshot command";
+    }
+    else
+    {
+        qDebug() << "Screenshot command sent successfully";
     }
 }
 
