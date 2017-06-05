@@ -71,7 +71,31 @@ QmpSocketMgr::~QmpSocketMgr()
 QString QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
 {
     qDebug() << __PRETTY_FUNCTION__ << "(" << cmd << ")";
-    return "";
+
+    if (theState != QmpState::READY)
+    {
+        qDebug() << "QEMU QMP interface not ready to send human monitor command";
+        return false;
+    }
+
+    QJsonObject jo;
+    QJsonValue cmdName("human-monitor-command");
+
+    jo.insert(EXECUTE_KEY, cmdName);
+
+    QJsonObject argObj;
+    argObj.insert("command-line", QJsonValue(cmd));
+
+    jo.insert(ARGUMENTS_KEY, argObj);
+
+    QJsonDocument jdoc;
+    jdoc.setObject(jo);
+
+    qDebug() << "About to send human monitor command";
+
+    emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
+    theState = QmpState::WAITING_FOR_RESPONSE;
+    return true;
 }
 
 bool QmpSocketMgr::enableVnc()
@@ -143,6 +167,11 @@ bool QmpSocketMgr::sendContinue()
 bool QmpSocketMgr::sendReset()
 {
     return sendNoParamNoRespCommand("system_reset");
+}
+
+bool QmpSocketMgr::sendCommandQuery()
+{
+    return sendNoParamNoRespCommand("query-commands");
 }
 
 bool QmpSocketMgr::saveSnapshot(QString snapshotName)

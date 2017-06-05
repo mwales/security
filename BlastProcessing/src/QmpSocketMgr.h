@@ -33,6 +33,8 @@ public:
     bool sendContinue();
     bool sendReset();
 
+    bool sendCommandQuery();
+
     bool saveSnapshot(QString snapshotName);
     QString querySnapshots();
     bool loadSnapshot(QString snapshotName);

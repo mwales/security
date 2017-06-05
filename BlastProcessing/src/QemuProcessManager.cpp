@@ -1,6 +1,10 @@
 #include "QemuProcessManager.h"
 #include <QtDebug>
 
+// To support snapshots
+//  Does query-qmp-schema tell us if qemu has QMP snapshot commands?
+//    query-events may also be interesting...
+//    query-commands
 
 QemuProcessManager::QemuProcessManager(QObject *parent):
     QObject(parent),
@@ -157,6 +161,18 @@ void QemuProcessManager::powerEmulatorOff()
 void QemuProcessManager::screenShot(QString filename)
 {
     if (!theQmpController->screendump(filename))
+    {
+        qDebug() << "Error from QMP when sending the screenshot command";
+    }
+    else
+    {
+        qDebug() << "Screenshot command sent successfully";
+    }
+}
+
+void QemuProcessManager::sendHumanCommandViaQmp(QString hciCmd)
+{
+    if (!theQmpController->executeHumanMonitorCommand(hciCmd))
     {
         qDebug() << "Error from QMP when sending the screenshot command";
     }
@@ -331,6 +347,7 @@ bool QemuProcessManager::buildDriveArgs()
 
         QString filearg = "file=";
         filearg += singleDrive;
+        filearg += ",format=qcow2";
         theSystemCommandArgs.append(filearg);
     }
 

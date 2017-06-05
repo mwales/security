@@ -85,6 +85,8 @@ public slots:
 
     void screenShot(QString filename);
 
+    void sendHumanCommandViaQmp(QString hciCmd);
+
 protected slots:
 
     void qemuStandardOutputReady();
