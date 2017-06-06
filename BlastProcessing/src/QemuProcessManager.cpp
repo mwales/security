@@ -59,13 +59,13 @@ void QemuProcessManager::startEmulator()
     theProcess->setArguments(theSystemCommandArgs);
 
     connect(theProcess, &QProcess::readyReadStandardOutput,
-            this, &QemuProcessManager::qemuStandardOutputReady);
+            this,       &QemuProcessManager::qemuStandardOutputReady);
     connect(theProcess, &QProcess::readyReadStandardError,
-            this, &QemuProcessManager::qemuStandardErrorReady);
+            this,       &QemuProcessManager::qemuStandardErrorReady);
     connect(theProcess, SIGNAL(error(QProcess::ProcessError)),
-            this, SLOT(qemuError(QProcess::ProcessError)));
+            this,       SLOT(qemuError(QProcess::ProcessError)));
     connect(theProcess, SIGNAL(finished(int,QProcess::ExitStatus)),
-            this, SLOT(qemuFinished(int,QProcess::ExitStatus)));
+            this,       SLOT(qemuFinished(int,QProcess::ExitStatus)));
 
     theProcess->start();
 
@@ -79,6 +79,11 @@ void QemuProcessManager::startEmulator()
     }
 
     theQmpController = new QmpSocketMgr("127.0.0.1", theStartingPortNumber, this);
+
+    connect(theQmpController,      &QmpSocketMgr::eventReceived,
+            this,                  &QemuProcessManager::eventReceived);
+    connect(theQmpController,      &QmpSocketMgr::humanResponseReceived,
+            this,                  &QemuProcessManager::hummanCommandResponse);
 
 }
 
@@ -174,11 +179,11 @@ void QemuProcessManager::sendHumanCommandViaQmp(QString hciCmd)
 {
     if (!theQmpController->executeHumanMonitorCommand(hciCmd))
     {
-        qDebug() << "Error from QMP when sending the screenshot command";
+        qDebug() << "Error from QMP when sending the humman command command";
     }
     else
     {
-        qDebug() << "Screenshot command sent successfully";
+        qDebug() << "Human command command sent successfully";
     }
 }
 

@@ -49,6 +49,10 @@ signals:
 
     void connectToQmp();
 
+    void eventReceived(QString text);
+
+    void hummanCommandResponse(QString text);
+
 public slots:
 
     // Emulation control functions

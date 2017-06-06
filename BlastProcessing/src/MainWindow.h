@@ -27,6 +27,12 @@ public slots:
 
     void screenshotButtonPressed();
 
+    void sendHumanCommandButtonPressed();
+
+    void eventReceived(QString eventText);
+
+    void humanResponseReceived(QString rsp);
+
 private:
 
     void fixBlastProcessingLogo();

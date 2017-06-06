@@ -68,7 +68,7 @@ QmpSocketMgr::~QmpSocketMgr()
 
 }
 
-QString QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
+bool QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
 {
     qDebug() << __PRETTY_FUNCTION__ << "(" << cmd << ")";
 
@@ -94,7 +94,7 @@ QString QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
     qDebug() << "About to send human monitor command";
 
     emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
-    theState = QmpState::WAITING_FOR_RESPONSE;
+    theState = QmpState::WAITING_FOR_HUMAN_COMMAND_RESPONSE;
     return true;
 }
 
@@ -299,6 +299,8 @@ void QmpSocketMgr::handleQmpEvent(QJsonObject obj)
     QString displayText = QString("EVENT> %1.%2%3 %4").arg(seconds).arg(usecsPadding.repeated(numPaddingDigits)).arg(usecs).arg(eventText);
 
     qDebug() << displayText;
+
+    emit eventReceived(eventText);
 }
 
 void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
@@ -315,6 +317,19 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
     if (theState == QmpState::WAITING_FOR_RESPONSE)
     {
         qDebug() << "QEMU QMP response received";
+        theState = QmpState::READY;
+        return;
+    }
+
+    if (theState == QmpState::WAITING_FOR_HUMAN_COMMAND_RESPONSE)
+    {
+        qDebug() << "QEMU QMP human command response received!";
+
+        if (obj["return"].isString())
+        {
+            emit humanResponseReceived(obj["return"].toString());
+        }
+
         theState = QmpState::READY;
         return;
     }

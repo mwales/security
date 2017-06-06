@@ -16,14 +16,17 @@ SOURCES += main.cpp\
         MainWindow.cpp \
     QemuProcessManager.cpp \
     SocketCommandInterface.cpp \
-    QmpSocketMgr.cpp
+    QmpSocketMgr.cpp \
+    JumboMessageBox.cpp
 
 HEADERS  += MainWindow.h \
     QemuProcessManager.h \
     SocketCommandInterface.h \
-    QmpSocketMgr.h
+    QmpSocketMgr.h \
+    JumboMessageBox.h
 
-FORMS    += MainWindow.ui
+FORMS    += MainWindow.ui \
+    JumboMessageBox.ui
 
 RESOURCES += \
     resources.qrc

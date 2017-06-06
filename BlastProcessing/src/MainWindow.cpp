@@ -7,6 +7,8 @@
 #include <QFileDialog>
 #include <QDir>
 
+#include "JumboMessageBox.h"
+
 const QString VM_FILE_SETTING_KEY = "last_used_vm_disk";
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -41,6 +43,16 @@ MainWindow::MainWindow(QWidget *parent) :
             this,                  &MainWindow::selectVmButtonPressed);
     connect(ui->theScreenCapButton,&QPushButton::clicked,
             this,                  &MainWindow::screenshotButtonPressed);
+    connect(ui->theSendHumanCommandButton, &QPushButton::clicked,
+            this,                  &MainWindow::sendHumanCommandButtonPressed);
+
+    connect(ui->theHumanCommandText, &QLineEdit::returnPressed,
+            this,                    &MainWindow::sendHumanCommandButtonPressed);
+
+    connect(theProcessManager,     &QemuProcessManager::eventReceived,
+            this,                  &MainWindow::eventReceived);
+    connect(theProcessManager,     &QemuProcessManager::hummanCommandResponse,
+            this,                  &MainWindow::humanResponseReceived);
 
     if (theSettings.contains(VM_FILE_SETTING_KEY))
     {
@@ -130,4 +142,42 @@ void MainWindow::screenshotButtonPressed()
     }
 
     theProcessManager->screenShot(destName);
+}
+
+void MainWindow::sendHumanCommandButtonPressed()
+{
+    if (!ui->theHumanCommandText->text().isEmpty())
+    {
+        theProcessManager->sendHumanCommandViaQmp(ui->theHumanCommandText->text());
+    }
+}
+
+void MainWindow::eventReceived(QString eventText)
+{
+    ui->statusBar->showMessage(eventText, 3000);
+}
+
+void MainWindow::humanResponseReceived(QString rsp)
+{
+    if (rsp.isEmpty())
+    {
+        ui->statusBar->showMessage("Empty response received from human command interface", 1500);
+        return;
+    }
+
+//    QMessageBox mb(QMessageBox::Information,
+//                   "Response",
+//                   "Human Command Response Received",
+//                   QMessageBox::Ok,
+//                   this);
+
+//    mb.setTextFormat(Qt::RichText);
+//    mb.setDetailedText(rsp);
+//    mb.exec();
+
+    JumboMessageBox jmb("Human Command Response", rsp, this);
+    jmb.exec();
+
+
+    //QMessageBox::information(this, "Human Command Interface Response", rsp, QMessageBox::Ok);
 }

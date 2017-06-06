@@ -19,7 +19,7 @@ public:
     QmpSocketMgr(QString host, uint16_t portNumber, QObject* parent = nullptr);
     ~QmpSocketMgr();
 
-    QString executeHumanMonitorCommand(QString cmd);
+    bool executeHumanMonitorCommand(QString cmd);
 
     bool enableVnc();
     bool disableVnc();
@@ -58,6 +58,10 @@ signals:
 
     void closeSocket();
 
+    void humanResponseReceived(QString text);
+
+    void eventReceived(QString text);
+
 
 
 
@@ -74,7 +78,8 @@ protected:
         WAITING_FOR_GREETING,
         WAITING_FOR_CAPABILITY_RESPONSE,
         READY,
-        WAITING_FOR_RESPONSE
+        WAITING_FOR_RESPONSE,
+        WAITING_FOR_HUMAN_COMMAND_RESPONSE
     };
 
     QmpState theState;
