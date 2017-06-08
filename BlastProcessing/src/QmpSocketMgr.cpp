@@ -16,6 +16,7 @@ const QString EVENT_TS_USECS = "microseconds";
 
 QmpSocketMgr::QmpSocketMgr(QString host, uint16_t portNumber, QObject* parent):
     QObject(parent),
+    theQueuingFlag(true),
     theState(QmpState::NOT_CONNECTED)
 {
     theQmpSocket = new SocketCommandInterface(host, portNumber);
@@ -74,8 +75,21 @@ bool QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
 
     if (theState != QmpState::READY)
     {
-        qDebug() << "QEMU QMP interface not ready to send human monitor command";
-        return false;
+        if (theState == QmpState::NOT_CONNECTED)
+        {
+            qDebug() << "QEMU QMP interface not ready to send human monitor command:" << cmd;
+            return false;
+        }
+        else
+        {
+            qDebug() << "Other command in process, HMI command (" << cmd << ") will be enqueued";
+            QPair< QueuedCommandType, QString> qe;
+            qe.first = QueuedCommandType::HUMAN_MONITOR_COMMAND;
+            qe.second = cmd;
+
+            theQueue.push_back(qe);
+            return true;
+        }
     }
 
     QJsonObject jo;
@@ -120,8 +134,21 @@ bool QmpSocketMgr::screendump(QString filename)
 
     if (theState != QmpState::READY)
     {
-        qDebug() << "QEMU QMP interface not ready to send screendump command";
-        return false;
+        if (theState == QmpState::NOT_CONNECTED)
+        {
+            qDebug() << "QEMU QMP interface not ready to send screendump command";
+            return false;
+        }
+        else
+        {
+            qDebug() << "Other command in process, screendump (" << filename << ") will be enqueued";
+            QPair< QueuedCommandType, QString> qe;
+            qe.first = QueuedCommandType::SCREENDUMP;
+            qe.second = filename;
+
+            theQueue.push_back(qe);
+            return true;
+        }
     }
 
     QJsonObject jo;
@@ -189,6 +216,11 @@ bool QmpSocketMgr::loadSnapshot(QString snapshotName)
 {
     qDebug() << __PRETTY_FUNCTION__ << "(" << snapshotName << ")";
     return false;
+}
+
+void QmpSocketMgr::enableCommandQueueing(bool enable)
+{
+    theQueuingFlag = enable;
 }
 
 void QmpSocketMgr::handleQmpGreeting(QJsonObject msg)
@@ -311,6 +343,8 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
     {
         qDebug() << "QEMU QMP interface ready (capability response received)";
         theState = QmpState::READY;
+
+        dequeRemainingCommands();
         return;
     }
 
@@ -318,6 +352,8 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
     {
         qDebug() << "QEMU QMP response received";
         theState = QmpState::READY;
+
+        dequeRemainingCommands();
         return;
     }
 
@@ -331,6 +367,8 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
         }
 
         theState = QmpState::READY;
+
+        dequeRemainingCommands();
         return;
     }
 
@@ -356,8 +394,21 @@ bool QmpSocketMgr::sendNoParamNoRespCommand(QString command)
 {
     if (theState != QmpState::READY)
     {
-        qDebug() << "QEMU QMP interface not ready to send command:" << command;
-        return false;
+        if (theState == QmpState::NOT_CONNECTED)
+        {
+            qDebug() << "QEMU QMP interface not ready to send command:" << command;
+            return false;
+        }
+        else
+        {
+            qDebug() << "Other command in process, command (" << command << ") will be enqueued";
+            QPair< QueuedCommandType, QString> qe;
+            qe.first = QueuedCommandType::NO_RESPONSE_QMP;
+            qe.second = command;
+
+            theQueue.push_back(qe);
+            return true;
+        }
     }
 
     QJsonObject jo;
@@ -373,4 +424,55 @@ bool QmpSocketMgr::sendNoParamNoRespCommand(QString command)
     emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
     theState = QmpState::WAITING_FOR_RESPONSE;
     return true;
+}
+
+void QmpSocketMgr::dequeRemainingCommands()
+{
+    if (!theQueue.empty())
+    {
+        QPair<QueuedCommandType, QString> qe;
+        qe = theQueue.first();
+
+        theQueue.pop_front();
+
+        switch(qe.first)
+        {
+        case QueuedCommandType::HUMAN_MONITOR_COMMAND:
+            qDebug() << "Dequeued a HUMAN_MONITOR_COMMAND:" << qe.second;
+            executeHumanMonitorCommand(qe.second);
+            return;
+
+        case QueuedCommandType::ENABLE_VNC:
+            qDebug() << "Unsupported queued command type";
+            return;
+
+        case QueuedCommandType::DISABLE_VNC:
+            qDebug() << "Unsupported queued command type";
+            return;
+
+        case QueuedCommandType::QUERY_VNC:
+            qDebug() << "Unsupported queued command type";
+            return;
+
+        case QueuedCommandType::SCREENDUMP:
+            qDebug() << "Dequeued a SCREENDUMP command, filename:" << qe.second;
+            screendump(qe.second);
+            return;
+
+        case QueuedCommandType::NO_RESPONSE_QMP:
+            qDebug() << "Dequeued a NO_RESPONSE_QMP command:" << qe.second;
+            sendNoParamNoRespCommand(qe.second);
+            return;
+
+        case QueuedCommandType::SAVE_SNAPSHOT:
+            qDebug() << "Unsupported queued command type";
+            return;
+
+        case QueuedCommandType::LOAD_SNAPSHOT:
+            qDebug() << "Unsupported queued command type";
+            return;
+        default:
+            qDebug() << "Invalid queued command type";
+        }
+    }
 }

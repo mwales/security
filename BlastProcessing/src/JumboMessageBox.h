@@ -13,6 +13,9 @@ class JumboMessageBox : public QDialog
 
 public:
     explicit JumboMessageBox(QString title, QString message, QWidget *parent = 0);
+
+    void setSubtitleText(QString text, QFont* font = nullptr);
+
     ~JumboMessageBox();
 
 private:

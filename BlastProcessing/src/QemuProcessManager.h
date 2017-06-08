@@ -53,6 +53,8 @@ signals:
 
     void hummanCommandResponse(QString text);
 
+    void errorReport(QString text);
+
 public slots:
 
     // Emulation control functions
@@ -117,6 +119,8 @@ protected:
     bool buildOtherArgs();
 
     bool buildMemoryArgs();
+
+    void reportError(QString text);
 
     std::vector<QString> theDriveFiles;
 

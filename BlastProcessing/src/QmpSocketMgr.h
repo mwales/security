@@ -6,6 +6,8 @@
 #include <QString>
 #include <stdint.h>
 #include <QJsonObject>
+#include <QVector>
+#include <QPair>
 
 class SocketCommandInterface;
 
@@ -38,6 +40,8 @@ public:
     bool saveSnapshot(QString snapshotName);
     QString querySnapshots();
     bool loadSnapshot(QString snapshotName);
+
+    void enableCommandQueueing(bool enable);
 
     // need to create signals thing we need to send to SocketCommandInterface
 
@@ -72,6 +76,10 @@ protected:
 
     bool sendNoParamNoRespCommand(QString command);
 
+    void dequeRemainingCommands();
+
+    bool theQueuingFlag;
+
     enum class QmpState
     {
         NOT_CONNECTED,
@@ -81,6 +89,20 @@ protected:
         WAITING_FOR_RESPONSE,
         WAITING_FOR_HUMAN_COMMAND_RESPONSE
     };
+
+    enum class QueuedCommandType
+    {
+        HUMAN_MONITOR_COMMAND,
+        ENABLE_VNC,
+        DISABLE_VNC,
+        QUERY_VNC,
+        SCREENDUMP,
+        NO_RESPONSE_QMP,
+        SAVE_SNAPSHOT,
+        LOAD_SNAPSHOT
+    };
+
+    QVector< QPair< QueuedCommandType, QString> > theQueue;
 
     QmpState theState;
 

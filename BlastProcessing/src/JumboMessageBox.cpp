@@ -9,9 +9,23 @@ JumboMessageBox::JumboMessageBox(QString title, QString message, QWidget *parent
 
     setWindowTitle(title);
     ui->theText->setPlainText(message);
+
+    ui->theSubTitle->hide();
 }
 
 JumboMessageBox::~JumboMessageBox()
 {
     delete ui;
+}
+
+void JumboMessageBox::setSubtitleText(QString text, QFont* font)
+{
+    ui->theSubTitle->setText(text);
+
+    if(font != nullptr)
+    {
+        ui->theSubTitle->setFont(*font);
+    }
+
+    ui->theSubTitle->show();
 }

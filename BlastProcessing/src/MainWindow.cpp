@@ -6,6 +6,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDir>
+#include <QInputDialog>
 
 #include "JumboMessageBox.h"
 
@@ -15,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     theProcessManager(nullptr),
-    theSettings("github-mwales", "blastprocessing")
+    theSettings("github-mwales", "blastprocessing"),
+    theSignatureFont(nullptr)
 {
     ui->setupUi(this);
 
@@ -30,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->theStopButton,     &QPushButton::clicked,
             theProcessManager,     &QemuProcessManager::stopEmulator);
+    connect(ui->thePauseButton,    &QPushButton::clicked,
+            theProcessManager,     &QemuProcessManager::pauseEmulator);
     connect(ui->theContinueButton, &QPushButton::clicked,
             theProcessManager,     &QemuProcessManager::continueEmulator);
     connect(ui->theResetButton,    &QPushButton::clicked,
@@ -45,6 +49,10 @@ MainWindow::MainWindow(QWidget *parent) :
             this,                  &MainWindow::screenshotButtonPressed);
     connect(ui->theSendHumanCommandButton, &QPushButton::clicked,
             this,                  &MainWindow::sendHumanCommandButtonPressed);
+    connect(ui->theSaveStateButton,&QPushButton::clicked,
+            this,                  &MainWindow::saveVmState);
+    connect(ui->theLoadStateButton,&QPushButton::clicked,
+            this,                  &MainWindow::loadVmState);
 
     connect(ui->theHumanCommandText, &QLineEdit::returnPressed,
             this,                    &MainWindow::sendHumanCommandButtonPressed);
@@ -85,9 +93,9 @@ void MainWindow::fixBlastProcessingLogo()
         qDebug() << "Font added: " << *singleFont;
     }
 
-    QFont f(fontList.front(), 28);
+    theSignatureFont = new QFont(fontList.front(), 28);
 
-    ui->theBlastProcessingLabel->setFont(f);
+    ui->theBlastProcessingLabel->setFont(*theSignatureFont);
 }
 
 
@@ -165,19 +173,43 @@ void MainWindow::humanResponseReceived(QString rsp)
         return;
     }
 
-//    QMessageBox mb(QMessageBox::Information,
-//                   "Response",
-//                   "Human Command Response Received",
-//                   QMessageBox::Ok,
-//                   this);
-
-//    mb.setTextFormat(Qt::RichText);
-//    mb.setDetailedText(rsp);
-//    mb.exec();
-
     JumboMessageBox jmb("Human Command Response", rsp, this);
+    jmb.setSubtitleText("Command Response", theSignatureFont);
     jmb.exec();
+}
 
 
-    //QMessageBox::information(this, "Human Command Interface Response", rsp, QMessageBox::Ok);
+void MainWindow::saveVmState()
+{
+    theProcessManager->pauseEmulator();
+
+    bool success;
+    QString stateName = QInputDialog::getText(this,
+                                              "Snapshot Name Entry",
+                                              "Enter a name for the snapshot",
+                                              QLineEdit::Normal,
+                                              "",
+                                              &success);
+
+    if (success && !stateName.isEmpty())
+    {
+        theProcessManager->saveEmulatorState(stateName);
+    }
+
+}
+
+void MainWindow::loadVmState()
+{
+    bool success;
+    QString stateName = QInputDialog::getText(this,
+                                              "Snapshot Name Entry",
+                                              "Enter a name for the snapshot to load",
+                                              QLineEdit::Normal,
+                                              "",
+                                              &success);
+
+    if (success && !stateName.isEmpty())
+    {
+        theProcessManager->loadEmulatorState(stateName);
+    }
 }

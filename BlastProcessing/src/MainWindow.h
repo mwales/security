@@ -9,6 +9,8 @@ namespace Ui {
 class MainWindow;
 }
 
+class QFont;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -33,6 +35,10 @@ public slots:
 
     void humanResponseReceived(QString rsp);
 
+    void saveVmState();
+
+    void loadVmState();
+
 private:
 
     void fixBlastProcessingLogo();
@@ -42,6 +48,10 @@ private:
     QemuProcessManager* theProcessManager;
 
     QSettings theSettings;
+
+    QFont* theSignatureFont;
+
+
 };
 
 #endif // MAINWINDOW_H

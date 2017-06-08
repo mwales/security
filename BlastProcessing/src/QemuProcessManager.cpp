@@ -44,13 +44,13 @@ void QemuProcessManager::startEmulator()
 {
     if (!buildCommand())
     {
-        qDebug() << "Error building emulator command, can't start!";
+        reportError("Error building emulator command, can't start!");
         return;
     }
 
     if (theProcess != nullptr)
     {
-        qDebug() << "Emulator already running!";
+        reportError("Emulator already running!");
         return;
     }
 
@@ -143,12 +143,36 @@ void QemuProcessManager::resetEmulator()
 
 void QemuProcessManager::saveEmulatorState(QString filename)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << filename << ")";
+    if (!theQmpController->sendStop())
+    {
+        reportError("Failed when sending the stop command (before saving VM)");
+        return;
+    }
+
+    QString saveVmCmd = QString("savevm %1").arg(filename);
+    if (!theQmpController->executeHumanMonitorCommand(saveVmCmd))
+    {
+        reportError("Failed to send the savevm command");
+        return;
+    }
+
+    if (!theQmpController->sendContinue())
+    {
+        reportError("Failed to continue emulation after saving VM state");
+        return;
+    }
+
+    qDebug() << "saveEmulatorState completed successfully (commands probably queued)";
 }
 
 void QemuProcessManager::loadEmulatorState(QString filename)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << filename << ")";
+    QString loadCmd = QString("loadvm %1").arg(filename);
+
+    if (!theQmpController->executeHumanMonitorCommand(loadCmd))
+    {
+        reportError("Failed to send the loadvm command");
+    }
 }
 
 void QemuProcessManager::powerEmulatorOff()
@@ -403,4 +427,13 @@ bool QemuProcessManager::buildMemoryArgs()
     theSystemCommandArgs.append("-m");
     theSystemCommandArgs.append(QString::number(theMemoryMb));
     return true;
+}
+
+void QemuProcessManager::reportError(QString text)
+{
+    /** TODO: Actually use this reportError function in more than occasional places, and make it
+     *        do something useful for the user (like a message box) */
+
+    qWarning() << "QemuProcessManager:" << text;
+    emit errorReport(text);
 }
