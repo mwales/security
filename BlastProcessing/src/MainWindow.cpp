@@ -41,9 +41,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->thePowerOffButton, &QPushButton::clicked,
             theProcessManager,     &QemuProcessManager::powerEmulatorOff);
 
-    connect(ui->theAboutQtButton,  &QPushButton::clicked,
+    connect(ui->actionAboutQt,     &QAction::triggered,
             this,                  &MainWindow::helpButtonPressed);
-    connect(ui->theSelectVmButton, &QPushButton::clicked,
+    connect(ui->theSelectDriveAButton, &QPushButton::clicked,
             this,                  &MainWindow::selectVmButtonPressed);
     connect(ui->theScreenCapButton,&QPushButton::clicked,
             this,                  &MainWindow::screenshotButtonPressed);
@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     if (theSettings.contains(VM_FILE_SETTING_KEY))
     {
-        ui->theVmLineEdit->setText(theSettings.value(VM_FILE_SETTING_KEY).toString());
+        ui->theDriveA->setText(theSettings.value(VM_FILE_SETTING_KEY).toString());
     }
 }
 
@@ -101,13 +101,13 @@ void MainWindow::fixBlastProcessingLogo()
 
 void MainWindow::startButtonPressed()
 {
-    if (ui->theVmLineEdit->text().isEmpty())
+    if (ui->theDriveA->text().isEmpty())
     {
         QMessageBox::critical(this, "No VM Disk Selected", "You must select a VM file before starting QEMU", QMessageBox::Ok);
         return;
     }
 
-    theProcessManager->addDriveFile(ui->theVmLineEdit->text());
+    theProcessManager->addDriveFile(ui->theDriveA->text());
     theProcessManager->setProcessorType("i386");
     theProcessManager->startEmulator();
 }
@@ -128,7 +128,7 @@ void MainWindow::selectVmButtonPressed()
     {
         qDebug() << "Selected VM File:" << vmFile;
 
-        ui->theVmLineEdit->setText(vmFile);
+        ui->theDriveA->setText(vmFile);
 
         theSettings.setValue(VM_FILE_SETTING_KEY, QVariant(vmFile));
 
