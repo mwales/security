@@ -7,6 +7,9 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QInputDialog>
+#include <iostream>
+#include <vector>
+#include <set>
 
 #include "JumboMessageBox.h"
 
@@ -21,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
+    loadControls();
 
     fixBlastProcessingLogo();
 
@@ -43,6 +46,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->actionAboutQt,     &QAction::triggered,
             this,                  &MainWindow::helpButtonPressed);
+    connect(ui->actionSave,        &QAction::triggered,
+            this,                  &MainWindow::saveConfig);
+    connect(ui->actionLoad,        &QAction::triggered,
+            this,                  &MainWindow::loadConfig);
+
     connect(ui->theSelectDriveAButton, &QPushButton::clicked,
             this,                  &MainWindow::selectVmButtonPressed);
     connect(ui->theScreenCapButton,&QPushButton::clicked,
@@ -71,6 +79,16 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::saveConfig()
+{
+
+}
+
+void MainWindow::loadConfig()
+{
+
 }
 
 
@@ -103,13 +121,35 @@ void MainWindow::startButtonPressed()
 {
     if (ui->theDriveA->text().isEmpty())
     {
-        QMessageBox::critical(this, "No VM Disk Selected", "You must select a VM file before starting QEMU", QMessageBox::Ok);
+        QMessageBox::critical(this,
+                              "No VM Disk Selected",
+                              "You must select a VM file before starting QEMU",
+                              QMessageBox::Ok);
         return;
     }
 
-    theProcessManager->addDriveFile(ui->theDriveA->text());
-    theProcessManager->setProcessorType("i386");
-    theProcessManager->startEmulator();
+    QemuConfiguration qemuCfg;
+    QStringList warningMsgs = readCurrentConfig(qemuCfg);
+    if (!warningMsgs.isEmpty())
+    {
+        QString msg = QString("Warnings:\n%1").arg(warningMsgs.join('\n'));
+        QMessageBox::StandardButton choice = QMessageBox::warning(this,
+                                                                  "QEMU Configuration Warnings",
+                                                                  msg,
+                                                                  QMessageBox::Ok | QMessageBox::Cancel);
+
+        if (choice == QMessageBox::Cancel)
+        {
+            return;
+        }
+        else
+        {
+            qInfo() << "User overrode warnings about QEMU configuration: "
+                    << warningMsgs.join(", ") << ".";
+        }
+    }
+
+    theProcessManager->startEmulator(qemuCfg);
 }
 
 void MainWindow::helpButtonPressed()
@@ -212,4 +252,85 @@ void MainWindow::loadVmState()
     {
         theProcessManager->loadEmulatorState(stateName);
     }
+}
+
+void MainWindow::loadControls()
+{
+    std::set<std::string> processorList = QemuConfiguration::getQemuProcessorTypeList();
+    for(auto singleArch = processorList.begin(); singleArch != processorList.end(); singleArch++)
+    {
+        ui->theCpuArch->addItem(QString(singleArch->c_str()));
+    }
+
+    std::set<std::string> adapterList = QemuConfiguration::getQemuNetworkAdapterTypeList();
+    for(auto singleAdapter = adapterList.begin(); singleAdapter != adapterList.end(); singleAdapter++)
+
+    {
+        ui->theNetworkAdapter->addItem(QString(singleAdapter->c_str()));
+    }
+
+    std::set<std::string> ramSizeList = QemuConfiguration::getMemorySizes();
+    for(auto singleSize = ramSizeList.begin(); singleSize != ramSizeList.end(); singleSize++)
+
+    {
+        ui->theRam->addItem(QString(singleSize->c_str()));
+    }
+
+    std::set<std::string> vgaList = QemuConfiguration::getVgaTypes();
+    for(auto singleVga = vgaList.begin(); singleVga != vgaList.end(); singleVga++)
+
+    {
+        ui->theDisplayAdapter->addItem(QString(singleVga->c_str()));
+    }
+
+
+}
+
+QStringList MainWindow::readCurrentConfig(QemuConfiguration& cfgByRef)
+{
+    QStringList retVal;
+
+    cfgByRef.setDriveA(ui->theDriveA->text().toStdString(), ui->theDriveAQCow2->isChecked());
+    cfgByRef.setDriveB(ui->theDriveB->text().toStdString(), ui->theDriveBQCow2->isChecked());
+
+    cfgByRef.setOpticalDrive(ui->theOpticalDrive->text().toStdString());
+
+    std::string proc = ui->theCpuArch->currentText().toStdString();
+    std::set<std::string> defaultProcs = QemuConfiguration::getQemuProcessorTypeList();
+    if (defaultProcs.find(proc) == defaultProcs.end())
+    {
+        retVal.append(QString("Processor %1 is not in the default list of processors").arg(proc.c_str()));
+    }
+    cfgByRef.setProcessorType(proc);
+
+    std::string nic = ui->theNetworkAdapter->currentText().toStdString();
+    std::set<std::string> defaultNics = QemuConfiguration::getQemuNetworkAdapterTypeList();
+    if (defaultNics.find(nic) == defaultNics.end())
+    {
+        retVal.append(QString("Network adapter %1 is not in the default list of NICs").arg(nic.c_str()));
+    }
+    cfgByRef.setNetworkAdapterType(nic);
+
+    std::string video = ui->theDisplayAdapter->currentText().toStdString();
+    std::set<std::string> defaultVgas = QemuConfiguration::getVgaTypes();
+    if (defaultVgas.find(video) == defaultVgas.end())
+    {
+        retVal.append(QString("Video adapter %1 is not in the default list of NICs").arg(video.c_str()));
+    }
+    cfgByRef.setVgaType(video);
+
+    // Missing flag for human control interface
+    cfgByRef.enableHumanInterfaceSocket(true);
+
+    cfgByRef.setOtherOptions(ui->theFreeformOptions->text().toStdString());
+
+    cfgByRef.setMemorySize(ui->theRam->currentText().toInt());
+
+    // Missing starting port number
+    cfgByRef.setStartingPortNumber(6000);
+
+    cfgByRef.setNumberOfCpus(ui->theNumCpus->value());
+
+    return retVal;
+
 }

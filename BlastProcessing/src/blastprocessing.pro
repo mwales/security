@@ -17,13 +17,15 @@ SOURCES += main.cpp\
     QemuProcessManager.cpp \
     SocketCommandInterface.cpp \
     QmpSocketMgr.cpp \
-    JumboMessageBox.cpp
+    JumboMessageBox.cpp \
+    QemuConfiguration.cpp
 
 HEADERS  += MainWindow.h \
     QemuProcessManager.h \
     SocketCommandInterface.h \
     QmpSocketMgr.h \
-    JumboMessageBox.h
+    JumboMessageBox.h \
+    QemuConfiguration.h
 
 FORMS    += MainWindow.ui \
     JumboMessageBox.ui

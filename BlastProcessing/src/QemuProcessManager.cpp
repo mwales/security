@@ -9,9 +9,7 @@
 QemuProcessManager::QemuProcessManager(QObject *parent):
     QObject(parent),
     theProcess(nullptr),
-    theMemoryMb(256),
     theStartingPortNumber(20000),
-    theHumanInterfaceEnabled(true),
     theQmpController(nullptr)
 {
 
@@ -40,13 +38,22 @@ QemuProcessManager::~QemuProcessManager()
 
 
 // Emulation control functions
-void QemuProcessManager::startEmulator()
+void QemuProcessManager::startEmulator(QemuConfiguration const & cfg)
 {
-    if (!buildCommand())
+    std::vector<std::string> args;
+    std::string cmd;
+    if (!cfg.getCommandLine(cmd, args))
     {
         reportError("Error building emulator command, can't start!");
         return;
     }
+
+    theSystemCommand = cmd.c_str();
+    for(auto singleArg = args.begin(); singleArg != args.end(); singleArg++)
+    {
+            theSystemCommandArgs.push_back(singleArg->c_str());
+    }
+    theStartingPortNumber = cfg.getStartingPortNumber();
 
     if (theProcess != nullptr)
     {
@@ -211,60 +218,6 @@ void QemuProcessManager::sendHumanCommandViaQmp(QString hciCmd)
     }
 }
 
-// Emulation setup options
-bool QemuProcessManager::addDriveFile(QString filename)
-{
-    if (theDriveFiles.size() >= 4)
-    {
-        qWarning() << "Already have 4 drives, and addDriveFile called(" << filename << ")";
-        return false;
-    }
-
-    theDriveFiles.push_back(filename);
-    return true;
-}
-
-bool QemuProcessManager::setProcessorType(QString processorName)
-{
-    theCpuType = processorName;
-    return true;
-}
-
-bool QemuProcessManager::setNetworkAdapterType(QString networkAdapterName)
-{
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << networkAdapterName << ")";
-    return false;
-}
-
-
-
-void QemuProcessManager::enableHumanInterfaceSocket(bool enable)
-{
-    theHumanInterfaceEnabled = enable;
-}
-
-bool QemuProcessManager::setOtherOptions(QString otherOptions)
-{
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet (" << otherOptions << ")";
-    return false;
-}
-
-void QemuProcessManager::setMemorySize(uint16_t numMegabytes)
-{
-    theMemoryMb = numMegabytes;
-}
-
-int QemuProcessManager::getNumberOfPortsPerInstance()
-{
-    qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
-    return -1;
-}
-
-void QemuProcessManager::setStartingPortNumber(uint16_t portNumber)
-{
-    theStartingPortNumber = portNumber;
-}
-
 void QemuProcessManager::qemuStandardOutputReady()
 {
     qDebug() << "QEMU-stdout:  " << theProcess->readAllStandardOutput();
@@ -327,106 +280,6 @@ void QemuProcessManager::qemuFinished(int exitCode, QProcess::ExitStatus status)
 
     theProcess->deleteLater();
     theProcess = nullptr;
-}
-
-bool QemuProcessManager::buildCommand()
-{
-    QString retVal;
-    theSystemCommand = "qemu-system-";
-
-    if (theCpuType.isEmpty())
-    {
-        qWarning() << "Must specify a CPU type before starting emulator";
-        return false;
-    }
-
-    theSystemCommand += theCpuType;
-
-    theSystemCommandArgs.clear();
-    bool success;
-    success = buildDriveArgs();
-    success = success && buildNetworkArgs();
-    success = success && buildQmpArgs();
-    success = success && buildMonitorSocketArgs();
-    success = success && buildOtherArgs();
-    success = success && buildMemoryArgs();
-
-    if (!success)
-    {
-        qWarning() << "Failed to build the command";
-        return false;
-    }
-
-    qDebug() << "Command:" << theSystemCommand;
-    qDebug() << "Args   :" << theSystemCommandArgs.join(" ");
-    return success;
-}
-
-bool QemuProcessManager::buildDriveArgs()
-{
-    if (theDriveFiles.empty())
-    {
-        qWarning() << "No drive files specified!";
-        return true;   // Maybe it booting off CDROM or some other memory?
-    }
-
-    foreach(QString singleDrive, theDriveFiles)
-    {
-        theSystemCommandArgs.append("-drive");
-
-        QString filearg = "file=";
-        filearg += singleDrive;
-        filearg += ",format=qcow2";
-        theSystemCommandArgs.append(filearg);
-    }
-
-    return true;
-}
-
-bool QemuProcessManager::buildNetworkArgs()
-{
-    theSystemCommandArgs.append("-net");
-    theSystemCommandArgs.append("nic,model=ne2k_pci,name=testNet");
-    theSystemCommandArgs.append("-net");
-    theSystemCommandArgs.append("user,id=testNet,hostfwd=tcp:127.0.0.1:2222-:23");
-    return true;
-
-}
-
-bool QemuProcessManager::buildQmpArgs()
-{
-    theSystemCommandArgs.append("-qmp");
-    QString devCfg = QString("tcp::%1,server,nowait").arg(theStartingPortNumber);
-    theSystemCommandArgs.append(devCfg);
-    return true;
-}
-
-bool QemuProcessManager::buildMonitorSocketArgs()
-{
-    if (theHumanInterfaceEnabled)
-    {
-        theSystemCommandArgs.append("-monitor");
-        QString devCfg = QString("tcp::%1,server,nowait").arg(theStartingPortNumber+1);
-        theSystemCommandArgs.append(devCfg);
-    }
-
-    return true;
-}
-
-bool QemuProcessManager::buildOtherArgs()
-{
-
-
-    theSystemCommandArgs.append("-display");
-    theSystemCommandArgs.append("sdl");
-    return true;
-}
-
-bool QemuProcessManager::buildMemoryArgs()
-{
-    theSystemCommandArgs.append("-m");
-    theSystemCommandArgs.append(QString::number(theMemoryMb));
-    return true;
 }
 
 void QemuProcessManager::reportError(QString text)

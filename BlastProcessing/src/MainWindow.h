@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QSettings>
 #include "QemuProcessManager.h"
+#include "QemuConfiguration.h"
 
 namespace Ui {
 class MainWindow;
@@ -20,6 +21,9 @@ public:
     ~MainWindow();
 
 public slots:
+    void saveConfig();
+
+    void loadConfig();
 
     void startButtonPressed();
 
@@ -41,7 +45,11 @@ public slots:
 
 private:
 
+    void loadControls();
+
     void fixBlastProcessingLogo();
+
+    QStringList readCurrentConfig(QemuConfiguration & cfgByRef);
 
     Ui::MainWindow *ui;
 
