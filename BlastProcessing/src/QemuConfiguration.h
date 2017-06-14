@@ -38,7 +38,10 @@ public:
      * +1 of the QMP port number
      */
     void enableHumanInterfaceSocket(bool enable);
-    bool humanInterfaceSocketEnabled() const;
+    bool getHumanInterfaceSocketEnabled() const;
+
+    void enableVncSocket(bool enable);
+    bool getVncSocketEnabled();
 
     void setOtherOptions(std::string otherOptions);
     std::string getOtherOptions() const;
@@ -51,6 +54,8 @@ public:
     static std::set<std::string> getVgaTypes();
     std::string getVgaType() const;
 
+    void setNumberUserPorts(uint8_t numPorts);
+    int getNumberUserPorts();
     int getNumberOfPortsPerInstance() const;
 
     void setStartingPortNumber(uint16_t portNumber);
@@ -58,6 +63,9 @@ public:
 
     void setNumberOfCpus(uint8_t numCpus);
     uint8_t getNumberOfCpus() const;
+
+    bool setPortForwardDestination(uint8_t forwardIndex, uint16_t portDestination);
+    uint16_t getPortForwardDestination(uint8_t forwardIndex);
 
     bool getCommandLine(std::string & commandName, std::vector<std::string> & args) const;
 
@@ -93,6 +101,7 @@ protected:
     std::string theNetworkAdapter;
 
     bool theHumanInterfaceEnabled;
+    bool theVncSocketEnabled;
 
     std::string theOtherOptions;
 
@@ -101,6 +110,7 @@ protected:
     static const std::set<std::string> theDefaultVgaTypes;
     std::string theVideoAdapter;
 
+    std::vector<uint16_t> theDestinationPorts;
 
     uint16_t theStartingPortNumber;
 };

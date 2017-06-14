@@ -108,9 +108,19 @@ void QemuConfiguration::enableHumanInterfaceSocket(bool enable)
     theHumanInterfaceEnabled = enable;
 }
 
-bool QemuConfiguration::humanInterfaceSocketEnabled() const
+bool QemuConfiguration::getHumanInterfaceSocketEnabled() const
 {
     return theHumanInterfaceEnabled;
+}
+
+void QemuConfiguration::enableVncSocket(bool enable)
+{
+    theVncSocketEnabled = enable;
+}
+
+bool QemuConfiguration::getVncSocketEnabled()
+{
+    return theVncSocketEnabled;
 }
 
 void QemuConfiguration::setOtherOptions(std::string otherOptions)
@@ -161,10 +171,37 @@ std::string QemuConfiguration::getVgaType() const
     return theVideoAdapter;
 }
 
+void QemuConfiguration::setNumberUserPorts(uint8_t numPorts)
+{
+    while(numPorts > theDestinationPorts.size())
+    {
+        theDestinationPorts.push_back(0);
+    }
+
+    while(numPorts < theDestinationPorts.size())
+    {
+        theDestinationPorts.pop_back();
+    }
+}
+
+int QemuConfiguration::getNumberUserPorts()
+{
+    return theDestinationPorts.size();
+}
+
 int QemuConfiguration::getNumberOfPortsPerInstance() const
 {
-    //qDebug() << __PRETTY_FUNCTION__ << " not implemented yet";
-    return -1;
+    int numPorts = theDestinationPorts.size() + 1;  // Always have to have QMP
+    if (theVncSocketEnabled)
+    {
+        numPorts++;
+    }
+    if (theHumanInterfaceEnabled)
+    {
+        numPorts++;
+    }
+
+    return numPorts;
 }
 
 void QemuConfiguration::setStartingPortNumber(uint16_t portNumber)
@@ -185,6 +222,27 @@ void QemuConfiguration::setNumberOfCpus(uint8_t numCpus)
 uint8_t QemuConfiguration::getNumberOfCpus() const
 {
     return theNumberCpus;
+}
+
+bool QemuConfiguration::setPortForwardDestination(uint8_t forwardIndex, uint16_t portDestination)
+{
+    if (forwardIndex >= theDestinationPorts.size())
+    {
+        return false;
+    }
+
+    theDestinationPorts[forwardIndex] = portDestination;
+    return true;
+}
+
+uint16_t QemuConfiguration::getPortForwardDestination(uint8_t forwardIndex)
+{
+    if (forwardIndex >= theDestinationPorts.size())
+    {
+        return 0;
+    }
+
+    return theDestinationPorts[forwardIndex];
 }
 
 bool QemuConfiguration::getCommandLine(std::string & commandName,
@@ -283,9 +341,37 @@ bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args) const
 bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args) const
 {
     args.push_back("-net");
-    args.push_back("nic,model=ne2k_pci,name=testNet");
+
+    //args.push_back("nic,model=ne2k_pci,name=testNet");
+    std::string nicString = "nic,model=";
+    nicString += theNetworkAdapter;
+    nicString += ",name=testNet";
+    args.push_back(nicString);
+
     args.push_back("-net");
-    args.push_back("user,id=testNet,hostfwd=tcp:127.0.0.1:2222-:23");
+
+    // Determine the port number for the start of the user ports
+    int curPort = theStartingPortNumber + 1; // Skip the QMP Port
+    if (theVncSocketEnabled)
+    {
+        curPort++;
+    }
+    if (theHumanInterfaceEnabled)
+    {
+        curPort++;
+    }
+
+    //args.push_back("user,id=testNet,hostfwd=tcp:127.0.0.1:2222-:23");
+    std::string netUserArg = "user,id=testNet";
+    for(unsigned int i = 0; i < theDestinationPorts.size(); i++)
+    {
+        netUserArg += ",hostfwd=tcp:127.0.0.1:";
+        netUserArg += std::to_string(curPort++);
+        netUserArg += "-:";
+        netUserArg += std::to_string(theDestinationPorts[i]);
+    }
+    args.push_back(netUserArg);
+
     return true;
 
 }

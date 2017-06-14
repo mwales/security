@@ -11,6 +11,9 @@ class MainWindow;
 }
 
 class QFont;
+class QLabel;
+class QLineEdit;
+class QSpinBox;
 
 class MainWindow : public QMainWindow
 {
@@ -43,6 +46,8 @@ public slots:
 
     void loadVmState();
 
+    void updatePortNumberGui();
+
 private:
 
     void loadControls();
@@ -59,6 +64,15 @@ private:
 
     QFont* theSignatureFont;
 
+    struct PortForwardControls
+    {
+        QLabel*    thePortLabel;
+        QLineEdit* theSourcePort;
+        QLabel*    theArrow;
+        QSpinBox * theDesintation;
+    };
+
+    QVector<struct PortForwardControls> thePortForwardControls;
 
 };
 

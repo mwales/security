@@ -74,6 +74,25 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         ui->theDriveA->setText(theSettings.value(VM_FILE_SETTING_KEY).toString());
     }
+
+    // Connect a whole bunch of controls to the slot that fixes the port number GUI
+    connect(ui->theNumPorts,       SIGNAL(valueChanged(int)),
+            this,                  SLOT(updatePortNumberGui()));
+    connect(ui->theVncCheckbox,    &QCheckBox::stateChanged,
+            this,                  &MainWindow::updatePortNumberGui);
+    connect(ui->theHmiCheckbox,    &QCheckBox::stateChanged,
+            this,                  &MainWindow::updatePortNumberGui);
+    connect(ui->theQmpPort,       SIGNAL(valueChanged(int)),
+            this,                  SLOT(updatePortNumberGui()));
+
+    thePortForwardControls.append({ui->thePortALabel, ui->thePortA, ui->thePortAArrow, ui->thePortADest});
+    thePortForwardControls.append({ui->thePortBLabel, ui->thePortB, ui->thePortBArrow, ui->thePortBDest});
+    thePortForwardControls.append({ui->thePortCLabel, ui->thePortC, ui->thePortCArrow, ui->thePortCDest});
+    thePortForwardControls.append({ui->thePortDLabel, ui->thePortD, ui->thePortDArrow, ui->thePortDDest});
+    thePortForwardControls.append({ui->thePortELabel, ui->thePortE, ui->thePortEArrow, ui->thePortEDest});
+    thePortForwardControls.append({ui->thePortFLabel, ui->thePortF, ui->thePortFArrow, ui->thePortFDest});
+
+    updatePortNumberGui();
 }
 
 MainWindow::~MainWindow()
@@ -254,6 +273,63 @@ void MainWindow::loadVmState()
     }
 }
 
+void MainWindow::updatePortNumberGui()
+{
+    // Assign port numbers
+    int curPortNum = ui->theQmpPort->value();
+    curPortNum++;
+
+    if(ui->theHmiCheckbox->isChecked())
+    {
+        ui->theHmiPort->setText(QString::number(curPortNum++));
+        ui->theHmiPort->show();
+        ui->theHmiPort->setEnabled(false);
+        ui->theHmiPortLabel->show();
+    }
+    else
+    {
+        ui->theHmiPort->hide();
+        ui->theHmiPortLabel->hide();
+    }
+
+    if(ui->theVncCheckbox->isChecked())
+    {
+        ui->theVncPort->setText(QString::number(curPortNum++));
+        ui->theVncPort->show();
+        ui->theVncPort->setEnabled(false);
+        ui->theVncPortLabel->show();
+    }
+    else
+    {
+        ui->theVncPort->hide();
+        ui->theVncPortLabel->hide();
+    }
+
+    // Loop will update the other 6 general purpose ports
+    for(int i = 0; i < 6; i++)
+    {
+        struct PortForwardControls curControl = thePortForwardControls[i];
+        if (ui->theNumPorts->value() >= (i + 1) )
+        {
+            // Port is visible
+            curControl.thePortLabel->show();
+            curControl.theSourcePort->setText(QString::number(curPortNum++));
+            curControl.theSourcePort->show();
+            curControl.theSourcePort->setEnabled(false);
+            curControl.theArrow->show();
+            curControl.theDesintation->show();
+        }
+        else
+        {
+            // Port should be hidden
+            curControl.thePortLabel->hide();
+            curControl.theSourcePort->hide();
+            curControl.theArrow->hide();
+            curControl.theDesintation->hide();
+        }
+    }
+}
+
 void MainWindow::loadControls()
 {
     std::set<std::string> processorList = QemuConfiguration::getQemuProcessorTypeList();
@@ -319,17 +395,22 @@ QStringList MainWindow::readCurrentConfig(QemuConfiguration& cfgByRef)
     }
     cfgByRef.setVgaType(video);
 
-    // Missing flag for human control interface
-    cfgByRef.enableHumanInterfaceSocket(true);
+    cfgByRef.enableHumanInterfaceSocket(ui->theHmiCheckbox->isChecked());
 
     cfgByRef.setOtherOptions(ui->theFreeformOptions->text().toStdString());
 
     cfgByRef.setMemorySize(ui->theRam->currentText().toInt());
 
-    // Missing starting port number
-    cfgByRef.setStartingPortNumber(6000);
+    cfgByRef.setStartingPortNumber(ui->theQmpPort->value());
 
     cfgByRef.setNumberOfCpus(ui->theNumCpus->value());
+
+    cfgByRef.setNumberUserPorts(ui->theNumPorts->value());
+
+    for(int i = 0; i < ui->theNumPorts->value(); i++)
+    {
+        cfgByRef.setPortForwardDestination(i, thePortForwardControls[i].theDesintation->value());
+    }
 
     return retVal;
 
