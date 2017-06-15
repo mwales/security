@@ -33,7 +33,7 @@ signals:
 public slots:
 
     // Emulation control functions
-    void startEmulator(QemuConfiguration const & cfg );
+    void startEmulator(QemuConfiguration & cfg );
 
     /**
      * Stops the QEMU process via the quit command
@@ -82,9 +82,6 @@ protected slots:
 protected:
 
     void reportError(QString text);
-
-    QStringList theSystemCommandArgs;
-    QString theSystemCommand;
 
     QProcess* theProcess;
 

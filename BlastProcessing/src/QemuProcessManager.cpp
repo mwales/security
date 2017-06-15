@@ -38,7 +38,7 @@ QemuProcessManager::~QemuProcessManager()
 
 
 // Emulation control functions
-void QemuProcessManager::startEmulator(QemuConfiguration const & cfg)
+void QemuProcessManager::startEmulator(QemuConfiguration & cfg)
 {
     std::vector<std::string> args;
     std::string cmd;
@@ -48,10 +48,11 @@ void QemuProcessManager::startEmulator(QemuConfiguration const & cfg)
         return;
     }
 
-    theSystemCommand = cmd.c_str();
+    QString systemCommand = cmd.c_str();
+    QStringList commandArgs;
     for(auto singleArg = args.begin(); singleArg != args.end(); singleArg++)
     {
-            theSystemCommandArgs.push_back(singleArg->c_str());
+            commandArgs.push_back(singleArg->c_str());
     }
     theStartingPortNumber = cfg.getStartingPortNumber();
 
@@ -61,9 +62,12 @@ void QemuProcessManager::startEmulator(QemuConfiguration const & cfg)
         return;
     }
 
+    QString commandLine = QString("%1 %2").arg(systemCommand).arg(commandArgs.join(" "));
+    qInfo() << "QEMU Command Line: " << commandLine;
+
     theProcess = new QProcess(this);
-    theProcess->setProgram(theSystemCommand);
-    theProcess->setArguments(theSystemCommandArgs);
+    theProcess->setProgram(systemCommand);
+    theProcess->setArguments(commandArgs);
 
     connect(theProcess, &QProcess::readyReadStandardOutput,
             this,       &QemuProcessManager::qemuStandardOutputReady);

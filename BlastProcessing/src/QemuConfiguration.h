@@ -67,23 +67,28 @@ public:
     bool setPortForwardDestination(uint8_t forwardIndex, uint16_t portDestination);
     uint16_t getPortForwardDestination(uint8_t forwardIndex);
 
-    bool getCommandLine(std::string & commandName, std::vector<std::string> & args) const;
+    bool getCommandLine(std::string & commandName, std::vector<std::string> & args);
+    void clearErrorsAndWarnings();
 
 protected:
 
-    bool buildCpuArgs(std::string & commandName, std::vector<std::string> & args) const;
+    bool buildCpuArgs(std::string & commandName, std::vector<std::string> & args);
 
-    bool buildDriveArgs(std::vector<std::string> & args) const;
+    bool buildDriveArgs(std::vector<std::string> & args);
 
-    bool buildNetworkArgs(std::vector<std::string> & args) const;
+    bool buildNetworkArgs(std::vector<std::string> & args);
 
-    bool buildQmpArgs(std::vector<std::string> & args) const;
+    bool buildQmpArgs(std::vector<std::string> & args);
 
-    bool buildMonitorSocketArgs(std::vector<std::string> & args) const;
+    bool buildVncArgs(std::vector<std::string> & args);
 
-    bool buildOtherArgs(std::vector<std::string> & args) const;
+    bool buildMonitorSocketArgs(std::vector<std::string> & args);
 
-    bool buildMemoryArgs(std::vector<std::string> & args) const;
+    bool buildOtherArgs(std::vector<std::string> & args);
+
+    bool buildMemoryArgs(std::vector<std::string> & args);
+
+    bool buildVgaArgs(std::vector<std::string> & args);
 
     std::string theDriveA;
     bool    theDriveAQcow2;
@@ -113,6 +118,9 @@ protected:
     std::vector<uint16_t> theDestinationPorts;
 
     uint16_t theStartingPortNumber;
+
+    std::string theErrorMessage;
+    std::vector<std::string> theWarningMessages;
 };
 
 #endif // QEMUCONFIGURATION_H

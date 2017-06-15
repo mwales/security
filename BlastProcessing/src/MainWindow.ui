@@ -393,6 +393,11 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="frame">
             <bool>false</bool>
            </property>
@@ -428,6 +433,11 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="frame">
             <bool>false</bool>
            </property>
@@ -461,6 +471,11 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
            </property>
            <property name="frame">
             <bool>false</bool>
@@ -534,6 +549,11 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
            </property>
            <property name="text">
             <string/>
@@ -611,6 +631,11 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="frame">
             <bool>false</bool>
            </property>
@@ -670,6 +695,11 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
            </property>
            <property name="frame">
             <bool>false</bool>
@@ -731,6 +761,11 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
            <property name="frame">
             <bool>false</bool>
            </property>
@@ -790,6 +825,11 @@
              <width>80</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
            </property>
            <property name="frame">
             <bool>false</bool>

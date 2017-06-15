@@ -138,15 +138,6 @@ void MainWindow::fixBlastProcessingLogo()
 
 void MainWindow::startButtonPressed()
 {
-    if (ui->theDriveA->text().isEmpty())
-    {
-        QMessageBox::critical(this,
-                              "No VM Disk Selected",
-                              "You must select a VM file before starting QEMU",
-                              QMessageBox::Ok);
-        return;
-    }
-
     QemuConfiguration qemuCfg;
     QStringList warningMsgs = readCurrentConfig(qemuCfg);
     if (!warningMsgs.isEmpty())
@@ -283,7 +274,7 @@ void MainWindow::updatePortNumberGui()
     {
         ui->theHmiPort->setText(QString::number(curPortNum++));
         ui->theHmiPort->show();
-        ui->theHmiPort->setEnabled(false);
+        ui->theHmiPort->setReadOnly(true);
         ui->theHmiPortLabel->show();
     }
     else
@@ -294,9 +285,11 @@ void MainWindow::updatePortNumberGui()
 
     if(ui->theVncCheckbox->isChecked())
     {
-        ui->theVncPort->setText(QString::number(curPortNum++));
+        QString vncPortText = QString("VNC :%1").arg(curPortNum - 5900);
+
+        ui->theVncPort->setText(vncPortText);
         ui->theVncPort->show();
-        ui->theVncPort->setEnabled(false);
+        ui->theVncPort->setReadOnly(true);
         ui->theVncPortLabel->show();
     }
     else
@@ -315,7 +308,7 @@ void MainWindow::updatePortNumberGui()
             curControl.thePortLabel->show();
             curControl.theSourcePort->setText(QString::number(curPortNum++));
             curControl.theSourcePort->show();
-            curControl.theSourcePort->setEnabled(false);
+            curControl.theSourcePort->setReadOnly(true);
             curControl.theArrow->show();
             curControl.theDesintation->show();
         }
@@ -396,6 +389,7 @@ QStringList MainWindow::readCurrentConfig(QemuConfiguration& cfgByRef)
     cfgByRef.setVgaType(video);
 
     cfgByRef.enableHumanInterfaceSocket(ui->theHmiCheckbox->isChecked());
+    cfgByRef.enableVncSocket(ui->theVncCheckbox->isChecked());
 
     cfgByRef.setOtherOptions(ui->theFreeformOptions->text().toStdString());
 

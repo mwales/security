@@ -246,7 +246,7 @@ uint16_t QemuConfiguration::getPortForwardDestination(uint8_t forwardIndex)
 }
 
 bool QemuConfiguration::getCommandLine(std::string & commandName,
-                                       std::vector<std::string> & args) const
+                                       std::vector<std::string> & args)
 {
 
 
@@ -256,28 +256,28 @@ bool QemuConfiguration::getCommandLine(std::string & commandName,
     success = success && buildDriveArgs(args);
     success = success && buildNetworkArgs(args);
     success = success && buildQmpArgs(args);
+    success = success && buildVncArgs(args);
     success = success && buildMonitorSocketArgs(args);
     success = success && buildOtherArgs(args);
     success = success && buildMemoryArgs(args);
+    success = success && buildVgaArgs(args);
 
-    if (!success)
-    {
-        //qWarning() << "Failed to build the command";
-        return false;
-    }
-
-    //qDebug() << "Command:" << theSystemCommand;
-    //qDebug() << "Args   :" << theSystemCommandArgs.join(" ");
     return success;
 }
 
-bool QemuConfiguration::buildCpuArgs(std::string & commandName, std::vector<std::string> & args) const
+void QemuConfiguration::clearErrorsAndWarnings()
+{
+    theErrorMessage = "";
+    theWarningMessages.clear();
+}
+
+bool QemuConfiguration::buildCpuArgs(std::string & commandName, std::vector<std::string> & args)
 {
     commandName = "qemu-system-";
 
     if (theCpuType.empty())
     {
-        //qWarning() << "Must specify a CPU type before starting emulator";
+        theErrorMessage = "Must specify a CPU type before starting emulator";
         return false;
     }
 
@@ -285,7 +285,7 @@ bool QemuConfiguration::buildCpuArgs(std::string & commandName, std::vector<std:
 
     if (theNumberCpus == 0)
     {
-        //qWarning() << "Must specify a at least 1 CPU core";
+        theErrorMessage = "Must specify a at least 1 CPU core";
         return false;
     }
 
@@ -296,14 +296,18 @@ bool QemuConfiguration::buildCpuArgs(std::string & commandName, std::vector<std:
     }
 
     return true;
-
 }
 
-bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args) const
+bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args)
 {
+    if (theDriveA.empty() && theDriveB.empty() )
+    {
+        theWarningMessages.push_back("No disk images specified for drive A or B");
+    }
+
     if (theDriveA.empty() && !theDriveB.empty() )
     {
-        //qWarning() << "No drive A file specified, but drive B file specified";
+        theErrorMessage = "No drive A file specified, but drive B file specified";
         return false;
     }
 
@@ -317,6 +321,10 @@ bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args) const
         if (theDriveAQcow2)
         {
             filearg += ",format=qcow2";
+        }
+        else
+        {
+            theWarningMessages.push_back("Not using qcow2 disk image for Drive A");
         }
         args.push_back(filearg);
     }
@@ -332,14 +340,29 @@ bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args) const
         {
             filearg += ",format=qcow2";
         }
+        else
+        {
+            theWarningMessages.push_back("Not using qcow2 disk image for Drive B");
+        }
         args.push_back(filearg);
     }
 
     return true;
 }
 
-bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args) const
+bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args)
 {
+    if (theNetworkAdapter.empty())
+    {
+        theWarningMessages.push_back("No network adapter selected");
+        return true;
+    }
+
+    if (theDefaultNetworkAdapters.find(theNetworkAdapter) == theDefaultNetworkAdapters.end())
+    {
+        theWarningMessages.push_back("Network adapter not in the list of default adapters");
+    }
+
     args.push_back("-net");
 
     //args.push_back("nic,model=ne2k_pci,name=testNet");
@@ -376,7 +399,7 @@ bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args) const
 
 }
 
-bool QemuConfiguration::buildQmpArgs(std::vector<std::string> & args) const
+bool QemuConfiguration::buildQmpArgs(std::vector<std::string> & args)
 {
     args.push_back("-qmp");
 
@@ -388,7 +411,41 @@ bool QemuConfiguration::buildQmpArgs(std::vector<std::string> & args) const
     return true;
 }
 
-bool QemuConfiguration::buildMonitorSocketArgs(std::vector<std::string> & args) const
+bool QemuConfiguration::buildVncArgs(std::vector<std::string> & args)
+{
+    args.push_back("-display");
+
+    if (theVncSocketEnabled)
+    {
+        int portNum = theStartingPortNumber + 1;
+        if (theHumanInterfaceEnabled)
+        {
+            portNum++;
+        }
+
+        // VNC offsets all ports by 5900
+        portNum -= 5900;
+
+        if (portNum <= 0)
+        {
+            // VNC option will fail with negative screen numbers (yes... this is dumb)
+            theErrorMessage = "If using VNC, the QMP port number must be > 5900";
+            return false;
+        }
+
+        std::string vncArg = "vnc=:";
+        vncArg += std::to_string(portNum);
+        args.push_back(vncArg);
+    }
+    else
+    {
+        args.push_back("sdl");
+    }
+
+    return true;
+}
+
+bool QemuConfiguration::buildMonitorSocketArgs(std::vector<std::string> & args)
 {
     if (theHumanInterfaceEnabled)
     {
@@ -402,18 +459,37 @@ bool QemuConfiguration::buildMonitorSocketArgs(std::vector<std::string> & args) 
     return true;
 }
 
-bool QemuConfiguration::buildOtherArgs(std::vector<std::string> & args) const
+bool QemuConfiguration::buildOtherArgs(std::vector<std::string> & args)
 {
-
-
-    args.push_back("-display");
-    args.push_back("sdl");
+    // todo, not implemented yet
     return true;
 }
 
-bool QemuConfiguration::buildMemoryArgs(std::vector<std::string> & args) const
+bool QemuConfiguration::buildMemoryArgs(std::vector<std::string> & args)
 {
     args.push_back("-m");
     args.push_back(std::to_string(theMemoryMb));
+    return true;
+}
+
+bool QemuConfiguration::buildVgaArgs(std::vector<std::string> & args)
+{
+    if (theDefaultVgaTypes.find(theVideoAdapter) == theDefaultVgaTypes.end())
+    {
+        theWarningMessages.push_back("Video adapter not in the list of default adapters");
+    }
+
+    std::string adapter;
+    if (theVideoAdapter.empty())
+    {
+        adapter = "none";
+    }
+    else
+    {
+        adapter = theVideoAdapter;
+    }
+
+    args.push_back("-vga");
+    args.push_back(adapter);
     return true;
 }
