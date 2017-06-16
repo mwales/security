@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <vector>
 #include <set>
+#include <map>
 
 class QemuConfiguration
 {
@@ -68,7 +69,10 @@ public:
     uint16_t getPortForwardDestination(uint8_t forwardIndex);
 
     bool getCommandLine(std::string & commandName, std::vector<std::string> & args);
+
     void clearErrorsAndWarnings();
+    std::string getErrorMessage() const { return theErrorMessage; }
+    std::vector<std::string> getWarnings() const { return theWarningMessages; }
 
 protected:
 
@@ -89,6 +93,11 @@ protected:
     bool buildMemoryArgs(std::vector<std::string> & args);
 
     bool buildVgaArgs(std::vector<std::string> & args);
+
+    void parseSingleConfigLine(std::string singleLine,
+                               std::map<std::string, std::string> & termsByRef);
+
+    void logMissingConfig(std::string const & missingKey);
 
     std::string theDriveA;
     bool    theDriveAQcow2;

@@ -56,6 +56,8 @@ private:
 
     QStringList readCurrentConfig(QemuConfiguration & cfgByRef);
 
+    void showConfigurationWarnings(QemuConfiguration & cfgByRef, QString title);
+
     Ui::MainWindow *ui;
 
     QemuProcessManager* theProcessManager;

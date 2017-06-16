@@ -1,5 +1,8 @@
 #include "QemuConfiguration.h"
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <map>
 
 const std::set<std::string> QemuConfiguration::theDefaultCpuTypes = {
     "aarch64", "alpha", "arm", "cris", "i386", "lm32", "m68k", "microblaze", "microblazeel", "mips",
@@ -13,6 +16,23 @@ const std::set<std::string> QemuConfiguration::theDefaultNetworkAdapters = {
 const std::set<std::string> QemuConfiguration::theDefaultVgaTypes = {
     "cirrus", "std", "vmware", "qxl", "tcx", "cg3", "virtio" };
 
+const char* CPU_KEY       = "CPU";
+const char* NUM_CPU_KEY   = "NUM_CPU";
+const char* NETWORK_KEY   = "NETWORK";
+const char* RAM_KEY       = "RAM";
+const char* DISPLAY_KEY   = "DISPLAY";
+const char* VNC_KEY       = "VNC_ENABLE";
+const char* HMI_KEY       = "HMI_ENABLE";
+const char* OTHER_OPT_KEY = "OTHER_OPTIONS";
+const char* DRIVEA_KEY    = "DRIVE_A";
+const char* QCOW2A_KEY    = "DRIVE_A_QCOW2";
+const char* DRIVEB_KEY    = "DRIVE_B";
+const char* QCOW2B_KEY    = "DRIVE_B_QCOW2";
+const char* OPTICAL_KEY   = "OPTICAL";
+const char* QMP_PORT_KEY  = "QMP_PORT";
+const char* NUM_PORTS_KEY = "USER_PORTS";
+const char* PORT_FWD_PFX  = "PORT_FWD_";
+
 QemuConfiguration::QemuConfiguration()
 {
 
@@ -20,15 +40,200 @@ QemuConfiguration::QemuConfiguration()
 
 bool QemuConfiguration::saveConfiguration(std::string pathname)
 {
+    clearErrorsAndWarnings();
 
-    return false;
+    std::fstream f;
+    f.open(pathname.c_str(), std::ios_base::out | std::ios_base::trunc);
+
+    if (!f.is_open())
+    {
+        theErrorMessage = "Error opening file";
+        return false;
+    }
+
+    f << CPU_KEY       << "=" << theCpuType << std::endl;
+    f << NUM_CPU_KEY   << "=" << (int) theNumberCpus << std::endl;
+    f << NETWORK_KEY   << "=" << theNetworkAdapter << std::endl;
+    f << RAM_KEY       << "=" << theMemoryMb << std::endl;
+    f << DISPLAY_KEY   << "=" << theVideoAdapter << std::endl;
+
+    f << VNC_KEY       << "=" << ( theVncSocketEnabled ? "TRUE" : "FALSE") << std::endl;
+    f << HMI_KEY       << "=" << ( theHumanInterfaceEnabled ? "TRUE" : "FALSE") << std::endl;
+    f << OTHER_OPT_KEY << "=" << theOtherOptions << std::endl;
+
+    f << DRIVEA_KEY    << "=" << theDriveA << std::endl;
+    f << QCOW2A_KEY    << "=" << (theDriveAQcow2 ? "TRUE" : "FALSE") << std::endl;
+    f << DRIVEB_KEY    << "=" << theDriveB << std::endl;
+    f << QCOW2B_KEY    << "=" << (theDriveBQcow2 ? "TRUE" : "FALSE") << std::endl;
+    f << OPTICAL_KEY   << "=" << theOpticalDrive << std::endl;
+
+    f << QMP_PORT_KEY  << "=" << theStartingPortNumber << std::endl;
+    f << NUM_PORTS_KEY << "=" << theDestinationPorts.size() << std::endl;
+
+    for(unsigned int i = 0; i < theDestinationPorts.size(); i++)
+    {
+        f << PORT_FWD_PFX << (char)('A' + i) << "=" << theDestinationPorts[i] << std::endl;
+    }
+
+    bool retVal = true;
+    if (f.bad() || f.fail())
+    {
+        theErrorMessage = "Error writing the contents to configuration file";
+        retVal = false;
+    }
+
+    f.close();
+    return retVal;
 }
 
 bool QemuConfiguration::loadConfiguration(std::string pathname)
 {
+    clearErrorsAndWarnings();
 
-    return false;
+    std::fstream f;
+    f.open(pathname.c_str(), std::ios_base::in);
+
+    if (!f.is_open())
+    {
+        theErrorMessage = "Error opening file";
+        return false;
+    }
+
+    std::map<std::string, std::string> configVals;
+    while(!f.eof())
+    {
+        std::string singleLine;
+        std::getline(f, singleLine);
+        parseSingleConfigLine(singleLine, configVals);
+    }
+
+    if (configVals.find(CPU_KEY) != configVals.end())
+        theCpuType = configVals[CPU_KEY];
+    else
+        logMissingConfig(CPU_KEY);
+
+    if (configVals.find(NUM_CPU_KEY) != configVals.end())
+        theNumberCpus = (uint8_t) atoi(configVals[NUM_CPU_KEY].c_str());
+    else
+        logMissingConfig(NUM_CPU_KEY);
+
+    if (configVals.find(NETWORK_KEY) != configVals.end())
+        theNetworkAdapter = configVals[NETWORK_KEY];
+    else
+        logMissingConfig(NETWORK_KEY);
+
+    if (configVals.find(RAM_KEY) != configVals.end())
+        theMemoryMb = (uint16_t) atoi(configVals[RAM_KEY].c_str());
+    else
+        logMissingConfig(RAM_KEY);
+
+    if (configVals.find(DISPLAY_KEY) != configVals.end())
+        theVideoAdapter = configVals[DISPLAY_KEY];
+    else
+        logMissingConfig(DISPLAY_KEY);
+
+    if (configVals.find(VNC_KEY) != configVals.end())
+        theVncSocketEnabled = ( configVals[VNC_KEY] == "TRUE" ? true : false);
+    else
+        logMissingConfig(VNC_KEY);
+
+    if (configVals.find(HMI_KEY) != configVals.end())
+        theHumanInterfaceEnabled = (configVals[HMI_KEY] == "TRUE" ? true : false);
+    else
+        logMissingConfig(HMI_KEY);
+
+    if (configVals.find(OTHER_OPT_KEY) != configVals.end())
+        theOtherOptions = configVals[OTHER_OPT_KEY];
+    else
+        logMissingConfig(OTHER_OPT_KEY);
+
+    if (configVals.find(DRIVEA_KEY) != configVals.end())
+        theDriveA = configVals[DRIVEA_KEY];
+    else
+        logMissingConfig(DRIVEA_KEY);
+
+    if (configVals.find(QCOW2A_KEY) != configVals.end())
+        theDriveAQcow2 = (configVals[QCOW2A_KEY] == "TRUE" ? true : false);
+    else
+        logMissingConfig(QCOW2A_KEY);
+
+    if (configVals.find(DRIVEB_KEY) != configVals.end())
+        theDriveB = configVals[DRIVEB_KEY];
+    else
+        logMissingConfig(DRIVEB_KEY);
+
+    if (configVals.find(QCOW2B_KEY) != configVals.end())
+        theDriveBQcow2 = (configVals[QCOW2B_KEY] == "TRUE" ? true : false);
+    else
+        logMissingConfig(QCOW2B_KEY);
+
+    if (configVals.find(OPTICAL_KEY) != configVals.end())
+       theOpticalDrive = configVals[OPTICAL_KEY];
+    else
+        logMissingConfig(OPTICAL_KEY);
+
+    if (configVals.find(QMP_PORT_KEY) != configVals.end())
+        theStartingPortNumber = (uint16_t) atoi(configVals[QMP_PORT_KEY].c_str());
+    else
+        logMissingConfig(QMP_PORT_KEY);
+
+
+    int numPortFwds = 0;
+    if (configVals.find(NUM_PORTS_KEY) != configVals.end())
+        numPortFwds = atoi(configVals[NUM_PORTS_KEY].c_str());
+
+    if ( (numPortFwds < 0) || (numPortFwds > 6))
+    {
+        std::string warnMsg = "Invalid number of port forwards: ";
+        warnMsg += std::to_string(numPortFwds);
+        numPortFwds = 0;
+    }
+
+    for(int i = 0; i < numPortFwds; i++)
+    {
+        std::string key = PORT_FWD_PFX;
+        key += (char) ('A' + i);
+
+        if (configVals.find(key) != configVals.end())
+        {
+            theDestinationPorts.push_back(atoi(configVals[key].c_str()));
+        }
+        else
+        {
+            logMissingConfig(key);
+            theDestinationPorts.push_back(i+1);
+        }
+    }
+
+    f.close();
+
+    return true;
 }
+
+void QemuConfiguration::logMissingConfig(std::string const & missingKey)
+{
+    std::string msg = "Missing configuration key ";
+    msg += missingKey;
+    theWarningMessages.push_back(msg);
+}
+
+void QemuConfiguration::parseSingleConfigLine(std::string singleLine,
+                           std::map<std::string, std::string> & termsByRef)
+{
+    size_t delimiterPos = singleLine.find('=');
+    if (delimiterPos == std::string::npos)
+    {
+        return;
+    }
+
+    std::string key = singleLine.substr(0, delimiterPos);
+    std::string val = singleLine.substr(delimiterPos + 1);
+
+    //std::cout << "Key=" << key << "\tVal=" << val << std::endl;
+
+    termsByRef[key] = val;
+}
+
 
 // Emulation setup options
 void QemuConfiguration::setDriveA(std::string filename, bool qcow2Format)
@@ -461,7 +666,32 @@ bool QemuConfiguration::buildMonitorSocketArgs(std::vector<std::string> & args)
 
 bool QemuConfiguration::buildOtherArgs(std::vector<std::string> & args)
 {
-    // todo, not implemented yet
+    std::string currentArg;
+    for(auto singleChar = theOtherOptions.begin();
+        singleChar != theOtherOptions.end();
+        singleChar++)
+    {
+        if (*singleChar == ' ')
+        {
+            // Found a delimeter
+            if (currentArg.length() != 0)
+            {
+                args.push_back(currentArg);
+                currentArg = "";
+            }
+        }
+        else
+        {
+            currentArg += *singleChar;
+        }
+    }
+
+    // Add the last token if it exists
+    if (currentArg.length() != 0)
+    {
+         args.push_back(currentArg);
+    }
+
     return true;
 }
 

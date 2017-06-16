@@ -102,12 +102,71 @@ MainWindow::~MainWindow()
 
 void MainWindow::saveConfig()
 {
+    QString filepath = QFileDialog::getSaveFileName(this,
+                                                    "Save QEMU Configuration",
+                                                    QDir::homePath(),
+                                                    "QEMU Config (*.qemucfg);;Any (*)");
 
+    if (!filepath.isEmpty())
+    {
+        QemuConfiguration qcfg;
+        readCurrentConfig(qcfg);
+
+        if (!qcfg.saveConfiguration(filepath.toStdString()))
+        {
+            QMessageBox::critical(this,
+                                  "Error Saving Configuration",
+                                  qcfg.getErrorMessage().c_str());
+        }
+    }
 }
 
 void MainWindow::loadConfig()
 {
+    QString filepath = QFileDialog::getOpenFileName(this,
+                                                    "Load QEMU Configuration",
+                                                    QDir::homePath(),
+                                                    "QEMU Config (*.qemucfg);;Any (*)");
 
+    if (filepath.isEmpty())
+    {
+        return;
+    }
+
+    QemuConfiguration qcfg;
+    if (!qcfg.loadConfiguration(filepath.toStdString()))
+    {
+        QMessageBox::critical(this,
+                              "Error Loading Configuration",
+                              qcfg.getErrorMessage().c_str());
+        return;
+    }
+
+    ui->theCpuArch->setCurrentText(qcfg.getProcessorType().c_str());
+    ui->theNumCpus->setValue(qcfg.getNumberOfCpus());
+    ui->theNetworkAdapter->setCurrentText(qcfg.getNetworkAdapterType().c_str());
+    ui->theRam->setCurrentText(QString::number(qcfg.getMemorySize()));
+    ui->theDisplayAdapter->setCurrentText(qcfg.getVgaType().c_str());
+    ui->theVncCheckbox->setChecked(qcfg.getVncSocketEnabled());
+    ui->theHmiCheckbox->setChecked(qcfg.getHumanInterfaceSocketEnabled());
+    ui->theFreeformOptions->setText(qcfg.getOtherOptions().c_str());
+    ui->theDriveA->setText(qcfg.getDriveA().c_str());
+    ui->theDriveAQCow2->setChecked(qcfg.getDriveAQCow2());
+    ui->theDriveA->setText(qcfg.getDriveA().c_str());
+    ui->theDriveAQCow2->setChecked(qcfg.getDriveAQCow2());
+    ui->theOpticalDrive->setText(qcfg.getOpticalDrive().c_str());
+    ui->theQmpPort->setValue(qcfg.getStartingPortNumber());
+
+    int numUserPorts = qcfg.getNumberUserPorts();
+    ui->theNumPorts->setValue(numUserPorts);
+    for(int i = 0; i < numUserPorts; i++)
+    {
+        thePortForwardControls[i].theDesintation->setValue(qcfg.getPortForwardDestination(i));
+    }
+
+    updatePortNumberGui();
+
+    showConfigurationWarnings(qcfg, "File Load Warnings");
 }
 
 
@@ -408,4 +467,25 @@ QStringList MainWindow::readCurrentConfig(QemuConfiguration& cfgByRef)
 
     return retVal;
 
+}
+
+void MainWindow::showConfigurationWarnings(QemuConfiguration & cfgByRef, QString title)
+{
+    std::vector<std::string> warnings = cfgByRef.getWarnings();
+
+    if (warnings.empty())
+    {
+        // No warnings to show
+        return;
+    }
+
+    QStringList warningList;
+    for(auto singleWarn = warnings.begin(); singleWarn != warnings.end(); singleWarn++)
+    {
+        warningList.append(singleWarn->c_str());
+    }
+
+    QMessageBox::warning(this,
+                         title,
+                         warningList.join('\n'));
 }
