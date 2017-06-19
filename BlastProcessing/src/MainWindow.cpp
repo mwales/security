@@ -15,6 +15,8 @@
 
 const QString VM_FILE_SETTING_KEY = "last_used_vm_disk";
 
+const char* IMAGE_FORMATS = "QEMU Copy-on-write (*.qcow2);;Raw (*.raw);;VMWare (*.vmdk);;VirtualBox (*.vdi);;Any (*)";
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -30,45 +32,50 @@ MainWindow::MainWindow(QWidget *parent) :
 
     theProcessManager = new QemuProcessManager(this);
 
-    connect(ui->theStartButton,    &QPushButton::clicked,
-            this,                  &MainWindow::startButtonPressed);
+    connect(ui->theStartButton,         &QPushButton::clicked,
+            this,                       &MainWindow::startButtonPressed);
 
-    connect(ui->theStopButton,     &QPushButton::clicked,
-            theProcessManager,     &QemuProcessManager::stopEmulator);
-    connect(ui->thePauseButton,    &QPushButton::clicked,
-            theProcessManager,     &QemuProcessManager::pauseEmulator);
-    connect(ui->theContinueButton, &QPushButton::clicked,
-            theProcessManager,     &QemuProcessManager::continueEmulator);
-    connect(ui->theResetButton,    &QPushButton::clicked,
-            theProcessManager,     &QemuProcessManager::resetEmulator);
-    connect(ui->thePowerOffButton, &QPushButton::clicked,
-            theProcessManager,     &QemuProcessManager::powerEmulatorOff);
+    connect(ui->theStopButton,          &QPushButton::clicked,
+            theProcessManager,          &QemuProcessManager::stopEmulator);
+    connect(ui->thePauseButton,         &QPushButton::clicked,
+            theProcessManager,          &QemuProcessManager::pauseEmulator);
+    connect(ui->theContinueButton,      &QPushButton::clicked,
+            theProcessManager,          &QemuProcessManager::continueEmulator);
+    connect(ui->theResetButton,         &QPushButton::clicked,
+            theProcessManager,          &QemuProcessManager::resetEmulator);
+    connect(ui->thePowerOffButton,      &QPushButton::clicked,
+            theProcessManager,          &QemuProcessManager::powerEmulatorOff);
 
-    connect(ui->actionAboutQt,     &QAction::triggered,
-            this,                  &MainWindow::helpButtonPressed);
-    connect(ui->actionSave,        &QAction::triggered,
-            this,                  &MainWindow::saveConfig);
-    connect(ui->actionLoad,        &QAction::triggered,
-            this,                  &MainWindow::loadConfig);
+    connect(ui->actionAboutQt,          &QAction::triggered,
+            this,                       &MainWindow::helpButtonPressed);
+    connect(ui->actionSave,             &QAction::triggered,
+            this,                       &MainWindow::saveConfig);
+    connect(ui->actionLoad,             &QAction::triggered,
+            this,                       &MainWindow::loadConfig);
 
-    connect(ui->theSelectDriveAButton, &QPushButton::clicked,
-            this,                  &MainWindow::selectVmButtonPressed);
-    connect(ui->theScreenCapButton,&QPushButton::clicked,
-            this,                  &MainWindow::screenshotButtonPressed);
-    connect(ui->theSendHumanCommandButton, &QPushButton::clicked,
-            this,                  &MainWindow::sendHumanCommandButtonPressed);
-    connect(ui->theSaveStateButton,&QPushButton::clicked,
-            this,                  &MainWindow::saveVmState);
-    connect(ui->theLoadStateButton,&QPushButton::clicked,
-            this,                  &MainWindow::loadVmState);
+    connect(ui->theSelectDriveAButton,  &QPushButton::clicked,
+            this,                       &MainWindow::selectDriveAPressed);
+    connect(ui->theSelectDriveBButton,  &QPushButton::clicked,
+            this,                       &MainWindow::selectDriveBPressed);
+    connect(ui->theSelectOpticalButton, &QPushButton::clicked,
+            this,                       &MainWindow::selectOpticalDrivePressed);
 
-    connect(ui->theHumanCommandText, &QLineEdit::returnPressed,
-            this,                    &MainWindow::sendHumanCommandButtonPressed);
+    connect(ui->theScreenCapButton,     &QPushButton::clicked,
+            this,                       &MainWindow::screenshotButtonPressed);
+    connect(ui->theSendHumanCommandButton,  &QPushButton::clicked,
+            this,                           &MainWindow::sendHumanCommandButtonPressed);
+    connect(ui->theSaveStateButton,     &QPushButton::clicked,
+            this,                       &MainWindow::saveVmState);
+    connect(ui->theLoadStateButton,     &QPushButton::clicked,
+            this,                       &MainWindow::loadVmState);
 
-    connect(theProcessManager,     &QemuProcessManager::eventReceived,
-            this,                  &MainWindow::eventReceived);
-    connect(theProcessManager,     &QemuProcessManager::hummanCommandResponse,
-            this,                  &MainWindow::humanResponseReceived);
+    connect(ui->theHumanCommandText,    &QLineEdit::returnPressed,
+            this,                       &MainWindow::sendHumanCommandButtonPressed);
+
+    connect(theProcessManager,          &QemuProcessManager::eventReceived,
+            this,                       &MainWindow::eventReceived);
+    connect(theProcessManager,          &QemuProcessManager::hummanCommandResponse,
+            this,                       &MainWindow::humanResponseReceived);
 
     if (theSettings.contains(VM_FILE_SETTING_KEY))
     {
@@ -226,23 +233,45 @@ void MainWindow::helpButtonPressed()
     QMessageBox::aboutQt(this, "About Qt");
 }
 
-void MainWindow::selectVmButtonPressed()
+void MainWindow::selectDriveAPressed()
 {
     QString vmFile = QFileDialog::getOpenFileName(this,
                                                   "Select VM Disk File",
                                                   QDir::homePath(),
-                                                  "QEMU Disk (*.qcow2)");
+                                                  IMAGE_FORMATS);
 
     if (!vmFile.isEmpty())
     {
-        qDebug() << "Selected VM File:" << vmFile;
-
         ui->theDriveA->setText(vmFile);
-
-        theSettings.setValue(VM_FILE_SETTING_KEY, QVariant(vmFile));
-
     }
 
+}
+
+
+void MainWindow::selectDriveBPressed()
+{
+    QString vmFile = QFileDialog::getOpenFileName(this,
+                                                  "Select VM Disk File",
+                                                  QDir::homePath(),
+                                                  IMAGE_FORMATS);
+
+    if (!vmFile.isEmpty())
+    {
+        ui->theDriveB->setText(vmFile);
+    }
+}
+
+void MainWindow::selectOpticalDrivePressed()
+{
+    QString vmFile = QFileDialog::getOpenFileName(this,
+                                                  "Select ISO Image",
+                                                  QDir::homePath(),
+                                                  "ISO (*.iso)");
+
+    if (!vmFile.isEmpty())
+    {
+        ui->theOpticalDrive->setText(vmFile);
+    }
 }
 
 void MainWindow::screenshotButtonPressed()

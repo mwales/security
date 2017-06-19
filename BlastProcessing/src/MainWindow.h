@@ -32,7 +32,11 @@ public slots:
 
     void helpButtonPressed();
 
-    void selectVmButtonPressed();
+    void selectDriveAPressed();
+
+    void selectDriveBPressed();
+
+    void selectOpticalDrivePressed();
 
     void screenshotButtonPressed();
 

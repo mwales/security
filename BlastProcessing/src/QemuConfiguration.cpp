@@ -552,6 +552,12 @@ bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args)
         args.push_back(filearg);
     }
 
+    if (!theOpticalDrive.empty())
+    {
+        args.push_back("-cdrom");
+        args.push_back(theOpticalDrive);
+    }
+
     return true;
 }
 
