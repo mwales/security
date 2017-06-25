@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>861</width>
-    <height>687</height>
+    <height>708</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
        </font>
       </property>
       <property name="text">
-       <string>BLAST PROCESSING</string>
+       <string>QEMU GENESIS</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -1241,7 +1241,7 @@
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QPushButton" name="theSendHumanCommandButton">
+            <widget class="QPushButton" name="theSendHumanCmdButton">
              <property name="font">
               <font>
                <pointsize>9</pointsize>
@@ -1254,6 +1254,19 @@
            </item>
            <item row="1" column="0" colspan="2">
             <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QPushButton" name="theBlastProcButton">
+               <property name="minimumSize">
+                <size>
+                 <width>300</width>
+                 <height>50</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Start Blast Processing</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <spacer name="horizontalSpacer">
                <property name="orientation">

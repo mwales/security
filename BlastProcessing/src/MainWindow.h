@@ -52,11 +52,13 @@ public slots:
 
     void updatePortNumberGui();
 
+    void startBlastProcessing();
+
 private:
 
     void loadControls();
 
-    void fixBlastProcessingLogo();
+    void applySpecialFont();
 
     QStringList readCurrentConfig(QemuConfiguration & cfgByRef);
 
@@ -69,6 +71,7 @@ private:
     QSettings theSettings;
 
     QFont* theSignatureFont;
+    QFont* theButtonFont;
 
     struct PortForwardControls
     {

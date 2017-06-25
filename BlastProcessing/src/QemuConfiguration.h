@@ -68,11 +68,21 @@ public:
     bool setPortForwardDestination(uint8_t forwardIndex, uint16_t portDestination);
     uint16_t getPortForwardDestination(uint8_t forwardIndex);
 
-    bool getCommandLine(std::string & commandName, std::vector<std::string> & args);
+    /**
+     * Returns the command and arg list to run QEMU with the given configuration
+     * @param instance The port numbers get shifted to deconflict from other instances of QEMU
+     *                 running this configuration based on this instance number
+     * @return True if command line was generated successfully
+     */
+    bool getCommandLine(std::string & commandName,
+                        std::vector<std::string> & args,
+                        int instance = 0);
 
     void clearErrorsAndWarnings();
     std::string getErrorMessage() const { return theErrorMessage; }
     std::vector<std::string> getWarnings() const { return theWarningMessages; }
+
+    std::map<std::string, std::string> getProcessEnvironment(int instance = 0);
 
 protected:
 
@@ -80,13 +90,13 @@ protected:
 
     bool buildDriveArgs(std::vector<std::string> & args);
 
-    bool buildNetworkArgs(std::vector<std::string> & args);
+    bool buildNetworkArgs(std::vector<std::string> & args, int id);
 
-    bool buildQmpArgs(std::vector<std::string> & args);
+    bool buildQmpArgs(std::vector<std::string> & args, int id);
 
-    bool buildVncArgs(std::vector<std::string> & args);
+    bool buildVncArgs(std::vector<std::string> & args, int id);
 
-    bool buildMonitorSocketArgs(std::vector<std::string> & args);
+    bool buildMonitorSocketArgs(std::vector<std::string> & args, int id);
 
     bool buildOtherArgs(std::vector<std::string> & args);
 

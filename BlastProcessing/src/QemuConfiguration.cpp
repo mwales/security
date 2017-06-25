@@ -451,7 +451,8 @@ uint16_t QemuConfiguration::getPortForwardDestination(uint8_t forwardIndex)
 }
 
 bool QemuConfiguration::getCommandLine(std::string & commandName,
-                                       std::vector<std::string> & args)
+                                       std::vector<std::string> & args,
+                                       int instance)
 {
 
 
@@ -459,10 +460,10 @@ bool QemuConfiguration::getCommandLine(std::string & commandName,
     bool success;
     success = buildCpuArgs(commandName, args);
     success = success && buildDriveArgs(args);
-    success = success && buildNetworkArgs(args);
-    success = success && buildQmpArgs(args);
-    success = success && buildVncArgs(args);
-    success = success && buildMonitorSocketArgs(args);
+    success = success && buildNetworkArgs(args, instance);
+    success = success && buildQmpArgs(args, instance);
+    success = success && buildVncArgs(args, instance);
+    success = success && buildMonitorSocketArgs(args, instance);
     success = success && buildOtherArgs(args);
     success = success && buildMemoryArgs(args);
     success = success && buildVgaArgs(args);
@@ -561,7 +562,7 @@ bool QemuConfiguration::buildDriveArgs(std::vector<std::string> & args)
     return true;
 }
 
-bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args)
+bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args, int id)
 {
     if (theNetworkAdapter.empty())
     {
@@ -585,7 +586,10 @@ bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args)
     args.push_back("-net");
 
     // Determine the port number for the start of the user ports
-    int curPort = theStartingPortNumber + 1; // Skip the QMP Port
+    int curPort = theStartingPortNumber + (id * getNumberOfPortsPerInstance());
+
+    curPort++; // Skip the QMP Port
+
     if (theVncSocketEnabled)
     {
         curPort++;
@@ -610,25 +614,26 @@ bool QemuConfiguration::buildNetworkArgs(std::vector<std::string> & args)
 
 }
 
-bool QemuConfiguration::buildQmpArgs(std::vector<std::string> & args)
+bool QemuConfiguration::buildQmpArgs(std::vector<std::string> & args, int id)
 {
     args.push_back("-qmp");
 
     std::string qmpArg = "tcp::";
-    qmpArg += std::to_string(theStartingPortNumber);
+    qmpArg += std::to_string(theStartingPortNumber + id * getNumberOfPortsPerInstance());
     qmpArg += ",server,nowait";
     args.push_back(qmpArg);
 
     return true;
 }
 
-bool QemuConfiguration::buildVncArgs(std::vector<std::string> & args)
+bool QemuConfiguration::buildVncArgs(std::vector<std::string> & args, int id)
 {
     args.push_back("-display");
 
     if (theVncSocketEnabled)
     {
-        int portNum = theStartingPortNumber + 1;
+        int portNum = theStartingPortNumber + id * getNumberOfPortsPerInstance();
+        portNum++; // Skip QMP
         if (theHumanInterfaceEnabled)
         {
             portNum++;
@@ -656,13 +661,15 @@ bool QemuConfiguration::buildVncArgs(std::vector<std::string> & args)
     return true;
 }
 
-bool QemuConfiguration::buildMonitorSocketArgs(std::vector<std::string> & args)
+bool QemuConfiguration::buildMonitorSocketArgs(std::vector<std::string> & args, int id)
 {
+    int portNumber = theStartingPortNumber + id * getNumberOfPortsPerInstance() + 1;
+
     if (theHumanInterfaceEnabled)
     {
         args.push_back("-monitor");
         std::string devCfg = "tcp::";
-        devCfg += std::to_string(theStartingPortNumber+1);
+        devCfg += std::to_string(portNumber);
         devCfg += ",server,nowait";
         args.push_back(devCfg);
     }
@@ -728,4 +735,37 @@ bool QemuConfiguration::buildVgaArgs(std::vector<std::string> & args)
     args.push_back("-vga");
     args.push_back(adapter);
     return true;
+}
+
+std::map<std::string, std::string> QemuConfiguration::getProcessEnvironment(int instance)
+{
+    std::map<std::string, std::string> retVal;
+
+    int portNumber = theStartingPortNumber + instance * getNumberOfPortsPerInstance();
+
+    // QMP
+    retVal[QMP_PORT_KEY] = std::to_string(portNumber++);
+
+    // HMI
+    if (theHumanInterfaceEnabled)
+    {
+        retVal[HMI_KEY] = std::to_string(portNumber++);
+    }
+
+    // VNC
+    if (theVncSocketEnabled)
+    {
+        retVal[VNC_KEY] = std::to_string(portNumber++);
+    }
+
+    const std::string USER_PORT_KEY = "Port";
+    for(unsigned int i = 0; i < theDestinationPorts.size(); i++)
+    {
+        std::string portVarName = USER_PORT_KEY;
+        portVarName += (char) ('A' + i);
+
+        retVal[portVarName] = std::to_string(portNumber++);
+    }
+
+    return retVal;
 }

@@ -12,6 +12,7 @@
 #include <set>
 
 #include "JumboMessageBox.h"
+#include "BlastProcessing.h"
 
 const QString VM_FILE_SETTING_KEY = "last_used_vm_disk";
 
@@ -28,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     loadControls();
 
-    fixBlastProcessingLogo();
+    applySpecialFont();
 
     theProcessManager = new QemuProcessManager(this);
 
@@ -46,6 +47,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->thePowerOffButton,      &QPushButton::clicked,
             theProcessManager,          &QemuProcessManager::powerEmulatorOff);
 
+    connect(ui->theBlastProcButton,     &QPushButton::clicked,
+            this,                       &MainWindow::startBlastProcessing);
+
     connect(ui->actionAboutQt,          &QAction::triggered,
             this,                       &MainWindow::helpButtonPressed);
     connect(ui->actionSave,             &QAction::triggered,
@@ -62,8 +66,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->theScreenCapButton,     &QPushButton::clicked,
             this,                       &MainWindow::screenshotButtonPressed);
-    connect(ui->theSendHumanCommandButton,  &QPushButton::clicked,
-            this,                           &MainWindow::sendHumanCommandButtonPressed);
+    connect(ui->theSendHumanCmdButton,  &QPushButton::clicked,
+            this,                       &MainWindow::sendHumanCommandButtonPressed);
     connect(ui->theSaveStateButton,     &QPushButton::clicked,
             this,                       &MainWindow::saveVmState);
     connect(ui->theLoadStateButton,     &QPushButton::clicked,
@@ -105,6 +109,9 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+
+    delete theSignatureFont;
+    delete theButtonFont;
 }
 
 void MainWindow::saveConfig()
@@ -177,7 +184,7 @@ void MainWindow::loadConfig()
 }
 
 
-void MainWindow::fixBlastProcessingLogo()
+void MainWindow::applySpecialFont()
 {
     int fontId = QFontDatabase::addApplicationFont(":/font/font/SEGA.TTF");
     if (-1 == fontId)
@@ -199,6 +206,9 @@ void MainWindow::fixBlastProcessingLogo()
     theSignatureFont = new QFont(fontList.front(), 28);
 
     ui->theBlastProcessingLabel->setFont(*theSignatureFont);
+
+    QFont* theButtonFont = new QFont(fontList.front(), 11);
+    ui->theBlastProcButton->setFont(*theButtonFont);
 }
 
 
@@ -409,6 +419,30 @@ void MainWindow::updatePortNumberGui()
             curControl.theDesintation->hide();
         }
     }
+}
+
+void MainWindow::startBlastProcessing()
+{
+    QemuConfiguration qemuCfg;
+    QStringList warnings = readCurrentConfig(qemuCfg);
+
+    if (!warnings.isEmpty())
+    {
+        QString warningMsg = QString("Proceed with Blast Processing?\n\n%1").arg(warnings.join('\n'));
+
+        QMessageBox::StandardButton results = QMessageBox::warning(this,
+                                                                   "QEMU Configuration Warnings",
+                                                                   warningMsg);
+
+        if (results != QMessageBox::Ok)
+        {
+            // User canceled
+            return;
+        }
+    }
+
+    BlastProcessing* bp = new BlastProcessing(qemuCfg, this);
+    bp->show();
 }
 
 void MainWindow::loadControls()

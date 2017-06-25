@@ -5,6 +5,7 @@
 #include <QJsonValue>
 
 SocketCommandInterface::SocketCommandInterface(QString host, int portNumber, QObject* parent):
+    QObject(parent),
     theSocket(nullptr),
     theConnectedFlag(false),
     theConnectTimer(nullptr),

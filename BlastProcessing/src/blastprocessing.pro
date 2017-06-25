@@ -18,17 +18,22 @@ SOURCES += main.cpp\
     SocketCommandInterface.cpp \
     QmpSocketMgr.cpp \
     JumboMessageBox.cpp \
-    QemuConfiguration.cpp
+    QemuConfiguration.cpp \
+    BlastProcessing.cpp \
+    QemuRunner.cpp
 
 HEADERS  += MainWindow.h \
     QemuProcessManager.h \
     SocketCommandInterface.h \
     QmpSocketMgr.h \
     JumboMessageBox.h \
-    QemuConfiguration.h
+    QemuConfiguration.h \
+    BlastProcessing.h \
+    QemuRunner.h
 
 FORMS    += MainWindow.ui \
-    JumboMessageBox.ui
+    JumboMessageBox.ui \
+    BlastProcessing.ui
 
 RESOURCES += \
     resources.qrc
