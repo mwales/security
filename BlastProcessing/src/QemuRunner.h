@@ -36,25 +36,42 @@ signals:
 
 public slots:
 
-    void runQemu();
+    void runnerThreadStart();
 
 protected slots:
 
-    void preProcessError(QProcess::ProcessError err);
+    void runnerProcessError(QProcess::ProcessError err);
 
-    void preProcessComplete(int exitCode);
+    void runnerProcessComplete(int exitCode);
 
-    void periProcessError(QProcess::ProcessError err);
-
-    void periProcessComplete(int exitCode, QProcess::ExitStatus exitStatus);
-
-    void postProcessError(QProcess::ProcessError err);
-
-    void postProcessComplete(int exitCode, QProcess::ExitStatus exitStatus);
+    void tickUpdate();
 
 protected:
 
+    void startNextState();
+
+    void startScript(QString scriptCommand);
+
+    void resetTimers();
+
+    void seeding();
+
+    void saveResults();
+
+
+    enum class RunnerState
+    {
+        NOT_RUNNING,
+        PRE_RUNNING,
+        PERI_RUNNING,
+        POST_RUNNING,
+        SAVE_RESULTS
+    };
+
+    enum RunnerState theState;
+
     int theInstanceId;
+    int theTestId;
 
     QemuConfiguration theCfg;
 
@@ -62,20 +79,15 @@ protected:
     QString thePeriScript;
     QString thePostScript;
 
-    QProcess* thePreProcess;
-    QProcess* thePeriProcess;
-    QProcess* thePostProcess;
+    QProcess* theRunningProcess;
 
-    QTimer* thePreProcessTimer;
-    QTimer* thePeriProcessTimer;
-    QTimer* thePostProcessTimer;
     QTimer* theProgressUpdateTimer;
 
     int theTimeout;
+    int theCurrentProcTime;
 
     bool theRunFlag;
 
-    bool thePreInProgressFlag;
 
 };
 

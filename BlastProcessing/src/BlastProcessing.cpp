@@ -35,31 +35,34 @@ BlastProcessing::~BlastProcessing()
 
 void BlastProcessing::startButtonPressed()
 {
-    QemuRunner* runner = new QemuRunner(2, theCfg);
-    QThread* runnerThread = new QThread();
-    runner->moveToThread(runnerThread);
+    for(int i = 0; i < ui->theNumInstances->value(); i++)
+    {
+        QemuRunner* runner = new QemuRunner(i, theCfg);
+        QThread* runnerThread = new QThread();
+        runner->moveToThread(runnerThread);
 
-    qDebug() << "RunnerThreaed = " << runnerThread;
+        qDebug() << "RunnerThreaed = " << runnerThread;
 
-    connect(runner,       &QemuRunner::runnerStopped,
-            this,         &BlastProcessing::runnerStopped);
-    connect(runnerThread, &QThread::started,
-            runner,       &QemuRunner::runQemu);
+        connect(runner,       &QemuRunner::runnerStopped,
+                this,         &BlastProcessing::runnerStopped);
+        connect(runnerThread, &QThread::started,
+                runner,       &QemuRunner::runnerThreadStart);
 
-    theSignalMapper.setMapping(runnerThread, runner);
+        theSignalMapper.setMapping(runnerThread, runner);
 
-    connect(runnerThread,     SIGNAL(finished()),
-            &theSignalMapper, SLOT(map()));
+        connect(runnerThread,     SIGNAL(finished()),
+                &theSignalMapper, SLOT(map()));
 
-    runner->setScripts(ui->thePreProcess->text(),
-                       ui->thePeriProcess->text(),
-                       ui->thePostProcess->text());
-    runner->setTimeout(ui->theTimeoutSecs->value());
+        runner->setScripts(ui->thePreProcess->text(),
+                           ui->thePeriProcess->text(),
+                           ui->thePostProcess->text());
+        runner->setTimeout(ui->theTimeoutSecs->value());
 
-    qDebug() << "Blast Processing Thread = " << QThread::currentThread();
-    runnerThread->start();
+        qDebug() << "Blast Processing Thread = " << QThread::currentThread();
+        runnerThread->start();
 
-    theRunners.insert({runner, runnerThread});
+        theRunners.insert({runner, runnerThread});
+    }
 }
 
 void  BlastProcessing::closeEvent(QCloseEvent * ev)
