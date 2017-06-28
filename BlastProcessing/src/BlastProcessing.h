@@ -3,7 +3,8 @@
 
 #include <QDialog>
 #include <QSignalMapper>
-#include <set>
+#include <utility>
+#include <vector>
 #include "QemuConfiguration.h"
 
 namespace Ui {
@@ -11,6 +12,11 @@ class BlastProcessing;
 }
 
 class QemuRunner;
+class QVBoxLayout;
+class QHBoxLayout;
+class QLineEdit;
+class QProgressBar;
+class QLabel;
 
 class BlastProcessing : public QDialog
 {
@@ -22,7 +28,9 @@ public:
 
 protected slots:
 
-    void runnerStopped(QemuRunner* stoppedRunner);
+    void runnerStopped(QObject* stoppedRunner);
+
+    void setNumInstancesUpdated(int numProcesses);
 
 protected:
 
@@ -36,13 +44,42 @@ private:
 
     void stopThreadsAndWait();
 
+    void spawnRunner(int instanceId);
+
+    void createProgressControls();
+
+
+
     Ui::BlastProcessing *ui;
 
     QemuConfiguration theCfg;
 
-    std::map<QemuRunner*, QThread*> theRunners;
+    std::map< int, std::pair<QemuRunner*, QThread*> > theRunners;
 
     QSignalMapper theSignalMapper;
+
+    int theNumInstancesToRun;
+
+    //*******
+    // Runner status stuff
+    //*******
+
+    QVBoxLayout* theStatusLayout;
+
+    struct ProgressControls
+    {
+        QLabel* theId;
+        QProgressBar* theProgress;
+        QLineEdit* theEdit;
+        QHBoxLayout* theLayout;
+    };
+
+    void setNumRunnerProgressToShow(int count);
+
+
+    QLabel* theMoreNotShownLabel;
+
+    std::vector<struct ProgressControls> theRunnerStatusUi;
 };
 
 #endif // BLASTPROCESSING_H

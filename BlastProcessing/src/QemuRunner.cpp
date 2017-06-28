@@ -7,22 +7,20 @@
 
 #include "QemuConfiguration.h"
 
-
-
 QemuRunner::QemuRunner(int id, QemuConfiguration const & cfg):
     theState(RunnerState::NOT_RUNNING),
     theInstanceId(id),
     theCfg(cfg),
     theRunningProcess(nullptr),
     theProgressUpdateTimer(nullptr),
-    theTimeout(30),
     theCurrentProcTime(-1),
     theRunFlag(false)
 {
     qDebug() << "QemuRunner ID" << id << "started";
 
-    theProgressUpdateTimer = new QTimer(this);
+    setTimeout(30);
 
+    theProgressUpdateTimer = new QTimer(this);
 }
 
 void QemuRunner::stopTests()
@@ -48,6 +46,8 @@ void QemuRunner::runnerThreadStart()
 
     theRunFlag = true;
 
+    theProgressUpdateTimer->start();
+
     startNextState();
 }
 
@@ -61,14 +61,15 @@ void QemuRunner::setScripts(QString pre, QString peri, QString post)
 
 void QemuRunner::setTimeout(int secs)
 {
+    qDebug() << "Instance " << theInstanceId << " timeout set to " << theTimeout << "secs";
     theTimeout = secs;
+    theProgressPerTick = 100 / theTimeout;
 }
 
 void QemuRunner::runnerProcessError(QProcess::ProcessError err)
 {
+    // Even though a process crashed, you have to wait for the complete signal to get called
     qDebug() << "Pre-Process encountered an error" << theRunningProcess->errorString();
-
-    startNextState();
 }
 
 void QemuRunner::runnerProcessComplete(int exitCode)
@@ -83,7 +84,8 @@ void QemuRunner::runnerProcessComplete(int exitCode)
 
 void QemuRunner::tickUpdate()
 {
-
+    // qDebug() << "Tick " << theCurrentProcTime << " for instance " << theInstanceId
+    //          << ", timeout at " << theTimeout << " ticks";
 
     if ( (theState == RunnerState::PRE_RUNNING) ||
          (theState == RunnerState::PERI_RUNNING) ||
@@ -93,19 +95,18 @@ void QemuRunner::tickUpdate()
 
         if (theState == RunnerState::PRE_RUNNING)
         {
-            emit testProgress(1,theCurrentProcTime);
+            emit testProgress(0 + theProgressPerTick * theCurrentProcTime);
         }
 
-        if (theState == RunnerState::PRE_RUNNING)
+        if (theState == RunnerState::PERI_RUNNING)
         {
-            emit testProgress(2,theCurrentProcTime);
+            emit testProgress(100 + theProgressPerTick * theCurrentProcTime);
         }
 
-        if (theState == RunnerState::PRE_RUNNING)
+        if (theState == RunnerState::POST_RUNNING)
         {
-            emit testProgress(3,theCurrentProcTime);
+            emit testProgress(200 + theProgressPerTick * theCurrentProcTime);
         }
-
 
         if (theCurrentProcTime > theTimeout)
         {
@@ -145,17 +146,17 @@ void QemuRunner::startNextState()
 
     case RunnerState::POST_RUNNING:
         // save results
+        emit testProgress(300);
         theState = RunnerState::SAVE_RESULTS;
         saveResults();
         return;
-
     }
-
-
 }
 
 void QemuRunner::startScript(QString scriptCommand)
 {
+    resetTimers();
+
     theRunningProcess = new QProcess();
     connect(theRunningProcess,            SIGNAL(error(QProcess::ProcessError)),
             this,                         SLOT(runnerProcessError(QProcess::ProcessError)));
@@ -184,7 +185,7 @@ void QemuRunner::startScript(QString scriptCommand)
 
 void QemuRunner::resetTimers()
 {
-    theTimeout = -1;
+    theCurrentProcTime = -1;
 }
 
 void QemuRunner::seeding()
@@ -203,7 +204,9 @@ void QemuRunner::saveResults()
     if (theRunFlag == false)
     {
         qDebug() << "Runner instance " << theInstanceId << " stopping";
-        runnerStopped(this);
+        theProgressUpdateTimer->stop();
+        emit runnerStopped(this);
+
     }
     else
     {

@@ -26,11 +26,11 @@ signals:
 
     void runnerStarted();
 
-    void runnerStopped(QemuRunner* whichRunner);
+    void runnerStopped(QObject* whichRunner);
 
     void testStarted(int testId);
 
-    void testProgress(int stage, int seconds);
+    void testProgress(int zeroTo300);
 
     void testComplete(QString result);
 
@@ -85,10 +85,9 @@ protected:
 
     int theTimeout;
     int theCurrentProcTime;
+    int theProgressPerTick;
 
     bool theRunFlag;
-
-
 };
 
 #endif // QEMURUNNER_H

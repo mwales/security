@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>817</width>
-    <height>297</height>
+    <height>566</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Process Control</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <item>
@@ -46,7 +46,14 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <widget class="QSpinBox" name="theTimeoutSecs"/>
+        <widget class="QSpinBox" name="theTimeoutSecs">
+         <property name="minimum">
+          <number>3</number>
+         </property>
+         <property name="maximum">
+          <number>600</number>
+         </property>
+        </widget>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label">
@@ -186,7 +193,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QScrollArea" name="scrollArea">
+    <widget class="QScrollArea" name="theRunnerStatusBox">
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -196,9 +203,10 @@
         <x>0</x>
         <y>0</y>
         <width>396</width>
-        <height>279</height>
+        <height>548</height>
        </rect>
       </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2"/>
      </widget>
     </widget>
    </item>
