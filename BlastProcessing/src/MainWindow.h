@@ -54,6 +54,8 @@ public slots:
 
     void startBlastProcessing();
 
+    void disableBlastProcessing();
+
 private:
 
     void loadControls();
@@ -63,6 +65,8 @@ private:
     QStringList readCurrentConfig(QemuConfiguration & cfgByRef);
 
     void showConfigurationWarnings(QemuConfiguration & cfgByRef, QString title);
+
+    void connectDisableBlastProcSignals();
 
     Ui::MainWindow *ui;
 
@@ -82,6 +86,8 @@ private:
     };
 
     QVector<struct PortForwardControls> thePortForwardControls;
+
+    QString theCurrentConfigFile;
 
 };
 

@@ -23,7 +23,9 @@ class BlastProcessing : public QDialog
     Q_OBJECT
 
 public:
-    explicit BlastProcessing(QemuConfiguration const & cfg, QWidget *parent = 0);
+    explicit BlastProcessing(QemuConfiguration const & cfg,
+                             QString configFile,
+                             QWidget *parent = 0);
     ~BlastProcessing();
 
 protected slots:
@@ -31,6 +33,16 @@ protected slots:
     void runnerStopped(QObject* stoppedRunner);
 
     void setNumInstancesUpdated(int numProcesses);
+
+    void saveGuiConfigFile(QString filename);
+
+    void loadGuiConfigFile(QString filename);
+
+    void saveButtonPressed();
+
+    void loadButtonPressed();
+
+    void invalidateConfig();
 
 protected:
 
@@ -53,6 +65,7 @@ private:
     Ui::BlastProcessing *ui;
 
     QemuConfiguration theCfg;
+    bool theStoredConfigValid;
 
     std::map< int, std::pair<QemuRunner*, QThread*> > theRunners;
 
@@ -80,6 +93,8 @@ private:
     QLabel* theMoreNotShownLabel;
 
     std::vector<struct ProgressControls> theRunnerStatusUi;
+
+
 };
 
 #endif // BLASTPROCESSING_H

@@ -104,6 +104,10 @@ MainWindow::MainWindow(QWidget *parent) :
     thePortForwardControls.append({ui->thePortFLabel, ui->thePortF, ui->thePortFArrow, ui->thePortFDest});
 
     updatePortNumberGui();
+
+    connectDisableBlastProcSignals();
+
+    //ui->theBlastProcButton->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
@@ -126,11 +130,21 @@ void MainWindow::saveConfig()
         QemuConfiguration qcfg;
         readCurrentConfig(qcfg);
 
+        if (!filepath.endsWith(".qemucfg") && !QFile::exists(filepath))
+        {
+            filepath.append(".qemucfg");
+        }
+
         if (!qcfg.saveConfiguration(filepath.toStdString()))
         {
             QMessageBox::critical(this,
                                   "Error Saving Configuration",
                                   qcfg.getErrorMessage().c_str());
+        }
+        else
+        {
+            ui->theBlastProcButton->setEnabled(true);
+            theCurrentConfigFile = filepath;
         }
     }
 }
@@ -181,6 +195,9 @@ void MainWindow::loadConfig()
     updatePortNumberGui();
 
     showConfigurationWarnings(qcfg, "File Load Warnings");
+
+    ui->theBlastProcButton->setEnabled(true);
+    theCurrentConfigFile = filepath;
 }
 
 
@@ -441,7 +458,7 @@ void MainWindow::startBlastProcessing()
         }
     }
 
-    BlastProcessing* bp = new BlastProcessing(qemuCfg, this);
+    BlastProcessing* bp = new BlastProcessing(qemuCfg, theCurrentConfigFile, this);
     bp->show();
 }
 
@@ -551,4 +568,55 @@ void MainWindow::showConfigurationWarnings(QemuConfiguration & cfgByRef, QString
     QMessageBox::warning(this,
                          title,
                          warningList.join('\n'));
+}
+
+void MainWindow::connectDisableBlastProcSignals()
+{
+    connect(ui->theCpuArch,             &QComboBox::currentTextChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theNumCpus,             SIGNAL(valueChanged(int)),
+            this,                       SLOT(disableBlastProcessing()));
+    connect(ui->theNetworkAdapter,      &QComboBox::currentTextChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theRam,                 &QComboBox::currentTextChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theDisplayAdapter,      &QComboBox::currentTextChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theNumPorts,            SIGNAL(valueChanged(int)),
+            this,                       SLOT(disableBlastProcessing()));
+
+    connect(ui->theVncCheckbox,         &QCheckBox::stateChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theHmiCheckbox,         &QCheckBox::stateChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+
+    connect(ui->theFreeformOptions,     &QLineEdit::textChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+
+    connect(ui->theQmpPort,             SIGNAL(valueChanged(int)),
+            this,                       SLOT(disableBlastProcessing()));
+
+    connect(ui->theDriveA,              &QLineEdit::textChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theDriveB,              &QLineEdit::textChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theOpticalDrive,        &QLineEdit::textChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+
+    connect(ui->theDriveAQCow2,         &QCheckBox::stateChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+    connect(ui->theDriveBQCow2,         &QCheckBox::stateChanged,
+            this,                       &MainWindow::disableBlastProcessing);
+
+    foreach(struct PortForwardControls thisCtrl, thePortForwardControls)
+    {
+        connect(thisCtrl.theDesintation, SIGNAL(valueChanged(int)),
+                this,                    SLOT(disableBlastProcessing()));
+    }
+
+}
+
+void MainWindow::disableBlastProcessing()
+{
+    ui->theBlastProcButton->setEnabled(false);
 }

@@ -5,6 +5,9 @@
 #include <QtDebug>
 #include <QProgressDialog>
 #include <QCloseEvent>
+#include <QFileDialog>
+#include <QFile>
+#include <QMessageBox>
 
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -12,34 +15,57 @@
 #include <QProgressBar>
 #include <QLineEdit>
 
+
 #include "QemuConfiguration.h"
 #include "QemuRunner.h"
 
+const QString PRE_COMMAND_KEY =         "PRE_COMMAND";
+const QString PERI_COMMAND_KEY =        "PERI_COMMAND";
+const QString USE_QEMU_KEY =            "USE_QEMU";
+const QString QEMU_CONFIG_FILE_KEY =    "QEMU_CONFIG_FILE";
+const QString QEMU_SNAPSHOT_NAME_KEY =  "QEMU_SNAPSHOT";
+const QString SEND_KEYSTROKES_KEY =     "QEMU_USE_KEYSTROKES";
+const QString KEYSTROKE_VALUES_KEY =    "KEYSTROKE_VALUES";
+const QString POST_COMMAND_KEY =        "POST_COMMAND";
+const QString NUM_INSTANCES =           "NUM_INSTANCES";
+const QString TIMEOUT_KEY =             "TIMEOUT";
+
 const int NUM_RUNNER_UI_CONTROLS = 25;
 
-BlastProcessing::BlastProcessing(QemuConfiguration const & cfg, QWidget *parent) :
+BlastProcessing::BlastProcessing(QemuConfiguration const & cfg,
+                                 QString theConfigFile,
+                                 QWidget *parent) :
     QDialog(parent),
     ui(new Ui::BlastProcessing),
     theCfg(cfg),
+    theStoredConfigValid(true),
     theNumInstancesToRun(0)
 {
     ui->setupUi(this);
+
+    ui->theQemuConfigFile->setText(theConfigFile);
 
     connect(ui->theStartButton,       &QPushButton::clicked,
             this,                     &BlastProcessing::startButtonPressed);
     connect(ui->theStopButton,        &QPushButton::clicked,
             this,                     &BlastProcessing::stopButtonPressed);
+    connect(ui->theSaveButton,        &QPushButton::clicked,
+            this,                     &BlastProcessing::saveButtonPressed);
+    connect(ui->theLoadButton,        &QPushButton::clicked,
+            this,                     &BlastProcessing::loadButtonPressed);
 
     connect(&theSignalMapper,         SIGNAL(mapped(QObject*)),
-            this,                     SLOT(runnerStopped(QemuRunner*)));
+            this,                     SLOT(runnerStopped(QObject*)));
 
     connect(ui->theNumInstances,      SIGNAL(valueChanged(int)),
             this,                     SLOT(setNumInstancesUpdated(int)));
 
+    connect(ui->theQemuConfigFile,    &QLineEdit::textChanged,
+            this,                     &BlastProcessing::invalidateConfig);
+
     createProgressControls();
 
-    theStatusLayout = new QVBoxLayout();
-    ui->theRunnerStatusBox->setLayout(theStatusLayout);
+
 }
 
 BlastProcessing::~BlastProcessing()
@@ -272,4 +298,152 @@ void BlastProcessing::setNumRunnerProgressToShow(int count)
         theMoreNotShownLabel->setVisible(true);
         theMoreNotShownLabel->setText(QString("Status for %1 more runners not shown...").arg(count - NUM_RUNNER_UI_CONTROLS));
     }
+}
+
+
+void BlastProcessing::saveGuiConfigFile(QString filename)
+{
+    QFile outputFile(filename);
+    if (!outputFile.open(QIODevice::WriteOnly))
+    {
+        QString errMessage = "Error opening file ";
+        errMessage += filename;
+        errMessage += " to write BP configuration to:";
+        errMessage += outputFile.errorString();
+        qWarning() << errMessage;
+        QMessageBox::warning(this, "Error saving BP Config", errMessage);
+        return;
+    }
+
+    QMap<QString,QString> configValues;
+    configValues[PRE_COMMAND_KEY] = ui->thePreProcess->text();
+    configValues[PERI_COMMAND_KEY] = ui->thePeriProcess->text();
+    configValues[POST_COMMAND_KEY] = ui->thePostProcess->text();
+    configValues[USE_QEMU_KEY] = (ui->theUseQemuCb->isChecked() ? "TRUE" : "FALSE");
+    configValues[QEMU_CONFIG_FILE_KEY] = ui->theQemuConfigFile->text();
+    configValues[QEMU_SNAPSHOT_NAME_KEY] = ui->theQemuSnapshot->text();
+    configValues[SEND_KEYSTROKES_KEY] = (ui->theQemuUseKeysCb->isChecked() ? "TRUE" : "FALSE");
+    configValues[KEYSTROKE_VALUES_KEY] = ui->theKeystrokeValues->text();
+    configValues[NUM_INSTANCES] = QString::number(ui->theNumInstances->value());
+    configValues[TIMEOUT_KEY] = QString::number(ui->theTimeoutSecs->value());
+
+    foreach(QString keyVal , configValues.keys())
+    {
+        QString textToWrite = QString("%1=%2\n").arg(keyVal).arg(configValues[keyVal]);
+
+        if (!outputFile.write(textToWrite.toLocal8Bit()))
+        {
+            QString errMessage = "Error writing BP config to file";
+            errMessage += filename;
+            errMessage += ": ";
+            errMessage += outputFile.errorString();
+
+            qWarning() << errMessage;
+
+            QMessageBox::warning(this, "Error saving BP Config", errMessage);
+
+            outputFile.close();
+            return;
+        }
+    }
+
+    outputFile.close();
+    qDebug() << "Saved BP config" << filename << "successfully";
+}
+
+void BlastProcessing::loadGuiConfigFile(QString filename)
+{
+    QFile cfgFile(filename);
+    if (!cfgFile.open(QIODevice::ReadOnly))
+    {
+        QString errMessage = "Error opening config file ";
+        errMessage += filename;
+        errMessage += ": ";
+        errMessage += cfgFile.errorString();
+
+        qWarning() << errMessage;
+        QMessageBox::critical(this,
+                              "File Open Error",
+                              errMessage);
+        return;
+    }
+
+    QString configContents = cfgFile.readAll();
+    QStringList cfgLines = configContents.split('\n', QString::SkipEmptyParts);
+    QMap<QString, QString> nvPairs;
+    foreach(QString singleLine, cfgLines)
+    {
+        QStringList lineData = singleLine.split('=', QString::SkipEmptyParts);
+        if (lineData.length() != 2)
+        {
+            qWarning() << "BP parse failure, expect 2 terms: " << singleLine;
+            continue;
+        }
+
+        nvPairs[lineData[0].trimmed()]=lineData[1].trimmed();
+    }
+
+    ui->thePreProcess->setText(nvPairs.value(PRE_COMMAND_KEY, ""));
+    ui->thePeriProcess->setText(nvPairs.value(PERI_COMMAND_KEY, ""));
+    ui->theUseQemuCb->setChecked(nvPairs.value(USE_QEMU_KEY, "FALSE") == "TRUE");
+    ui->theQemuConfigFile->setText(nvPairs.value(QEMU_CONFIG_FILE_KEY, ""));
+    ui->theQemuSnapshot->setText(nvPairs.value(QEMU_SNAPSHOT_NAME_KEY, ""));
+    ui->theQemuUseKeysCb->setChecked(nvPairs.value(SEND_KEYSTROKES_KEY, "FALSE") == "TRUE");
+    ui->thePostProcess->setText(nvPairs.value(POST_COMMAND_KEY, ""));
+
+    bool numParseSuccess = false;
+    int numInstances = nvPairs.value(NUM_INSTANCES, "1").toInt(&numParseSuccess);
+
+    if ( numParseSuccess && (numInstances >= 1) && (numInstances < 1000) )
+    {
+        ui->theNumInstances->setValue(numInstances);
+    }
+
+    numParseSuccess = false;
+    int timeoutVal = nvPairs.value(TIMEOUT_KEY, "5").toInt(&numParseSuccess);
+    if ( numParseSuccess && (timeoutVal >= 1) && (timeoutVal <= 6000) )
+    {
+        ui->theTimeoutSecs->setValue(timeoutVal);
+    }
+
+
+}
+
+
+void BlastProcessing::saveButtonPressed()
+{
+    QString name = QFileDialog::getSaveFileName(this,
+                                                "Blast Processing Config File",
+                                                QDir::currentPath(),
+                                                "Blast Processing Config (*.bpcfg)");
+
+    if (!name.isEmpty())
+    {
+        if (!name.endsWith(".bpcfg") && !QFile::exists(name))
+        {
+            name += ".bpcfg";
+        }
+
+        saveGuiConfigFile(name);
+    }
+
+}
+
+void BlastProcessing::loadButtonPressed()
+{
+    QString name = QFileDialog::getOpenFileName(this,
+                                                "Blast Processing Config File",
+                                                QDir::currentPath(),
+                                                "Blast Processing Config (*.bpcfg);;All Files(*)");
+
+    if (!name.isEmpty())
+    {
+        loadGuiConfigFile(name);
+    }
+}
+
+void BlastProcessing::invalidateConfig()
+{
+    qDebug() << "Configuration invalid";
+    theStoredConfigValid = false;
 }
