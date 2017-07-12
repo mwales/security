@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 
 #include "QemuConfiguration.h"
+#include "QemuProcessManager.h"
 
 QemuRunner::QemuRunner(int id, QemuConfiguration const & cfg):
     theState(RunnerState::NOT_RUNNING),
@@ -14,7 +15,10 @@ QemuRunner::QemuRunner(int id, QemuConfiguration const & cfg):
     theRunningProcess(nullptr),
     theProgressUpdateTimer(nullptr),
     theCurrentProcTime(-1),
-    theRunFlag(false)
+    theRunFlag(false),
+    theUseQemuFlag(false),
+    theQemuProcess(nullptr),
+    theSendQemuKeystrokesFlag(false)
 {
     qDebug() << "QemuRunner ID" << id << "started";
 
@@ -121,14 +125,36 @@ void QemuRunner::startNextState()
     switch(theState)
     {
     case RunnerState::NOT_RUNNING:
+        theState = RunnerState::STARTING_QEMU;
+
+        if (theUseQemuFlag)
+        {
+            startQemu();
+            return;
+        }
+
+        // Else, if not using QEMU, fall through intentionally...
+
+    case RunnerState::STARTING_QEMU:
+        // Intentional fall-through
+
     case RunnerState::SAVE_RESULTS:
-        seeding();
+        if (theRunFlag)
+        {
+            seeding();
 
-        qDebug() << __PRETTY_FUNCTION__ << " going to start PRE script";
-        theState = RunnerState::PRE_RUNNING;
-        startScript(thePreScript);
+            qDebug() << __PRETTY_FUNCTION__ << " going to start PRE script";
+            theState = RunnerState::PRE_RUNNING;
+            startScript(thePreScript);
 
-        return;
+            return;
+        }
+        else
+        {
+            // Stop QEMU
+            stopQemu();
+            return;
+        }
 
     case RunnerState::PRE_RUNNING:
         qDebug() << __PRETTY_FUNCTION__ << " going to start PERI script";
@@ -140,6 +166,10 @@ void QemuRunner::startNextState()
     case RunnerState::PERI_RUNNING:
         qDebug() << __PRETTY_FUNCTION__ << " going to start POST script";
         theState = RunnerState::POST_RUNNING;
+
+        // Need to load the snapshot and send keystrokes
+
+
         startScript(thePostScript);
 
         return;
@@ -211,5 +241,56 @@ void QemuRunner::saveResults()
     else
     {
         startNextState();
+    }
+}
+
+void QemuRunner::startQemu()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    theQemuProcess = new QemuProcessManager(this);
+
+    connect(theQemuProcess,       &QemuProcessManager::qemuQmpReady,
+            this,                 &QemuRunner::qemuStarted);
+
+    theQemuProcess->startEmulator(theCfg, theInstanceId);
+}
+
+void QemuRunner::qemuStarted()
+{
+    qDebug() << __PRETTY_FUNCTION__;
+    startNextState();
+}
+
+void QemuRunner::stopQemu()
+{
+    if (theUseQemuFlag)
+    {
+        qDebug() << "Stopping QEMU";
+        theQemuProcess->stopEmulator();
+        qDebug() << "Returned after stopping QEMU emulator";
+    }
+
+    qDebug() << "Runner instance " << theInstanceId << " stopping";
+    theProgressUpdateTimer->stop();
+    emit runnerStopped(this);
+}
+
+void QemuRunner::useQemuEmulator(bool enable,
+                                 QString snapshotName,
+                                 bool sendKeystrokes,
+                                 QString keystrokes)
+{
+    theUseQemuFlag = enable;
+    if (theUseQemuFlag)
+    {
+        theQemuSnapshotName = snapshotName;
+        theSendQemuKeystrokesFlag = sendKeystrokes;
+        theQemuKeystrokes = keystrokes;
+    }
+    else
+    {
+        theQemuSnapshotName = "snapshotName""";
+        theSendQemuKeystrokesFlag = false;
+        theQemuKeystrokes = "";
     }
 }

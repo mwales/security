@@ -1,4 +1,5 @@
 #include "SocketCommandInterface.h"
+
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>

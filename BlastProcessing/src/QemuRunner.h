@@ -6,6 +6,8 @@
 #include <QTimer>
 #include "QemuConfiguration.h"
 
+class QemuProcessManager;
+
 
 class QemuRunner : public QObject
 {
@@ -21,6 +23,11 @@ public:
     void stopTests();
 
     int getInstanceId() { return theInstanceId; }
+
+    void useQemuEmulator(bool enable,
+                         QString snapshotName,
+                         bool sendKeystrokes,
+                         QString keystrokes);
 
 signals:
 
@@ -46,6 +53,8 @@ protected slots:
 
     void tickUpdate();
 
+    void qemuStarted();
+
 protected:
 
     void startNextState();
@@ -58,10 +67,15 @@ protected:
 
     void saveResults();
 
+    void startQemu();
+
+    void stopQemu();
+
 
     enum class RunnerState
     {
         NOT_RUNNING,
+        STARTING_QEMU,
         PRE_RUNNING,
         PERI_RUNNING,
         POST_RUNNING,
@@ -88,6 +102,15 @@ protected:
     int theProgressPerTick;
 
     bool theRunFlag;
+
+
+    bool theUseQemuFlag;
+    QemuProcessManager* theQemuProcess;
+
+    QString theQemuSnapshotName;
+
+    bool theSendQemuKeystrokesFlag;
+    QString theQemuKeystrokes;
 };
 
 #endif // QEMURUNNER_H

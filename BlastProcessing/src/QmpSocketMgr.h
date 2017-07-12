@@ -1,16 +1,22 @@
 #ifndef QMPSOCKETMGR_H
 #define QMPSOCKETMGR_H
 
+#include <stdint.h>
+
 #include <QObject>
 #include <QThread>
 #include <QString>
-#include <stdint.h>
 #include <QJsonObject>
 #include <QVector>
 #include <QPair>
 
 class SocketCommandInterface;
 
+/**
+ * This class sends messages to QEMU via a QMP socket.  This class handles the JSON serialization
+ * and deserialization for the user. It also handles queueing commands for QEMU if the interface
+ * hasn't been established yet, or is waiting for a response from previous command.
+ */
 class QmpSocketMgr : public QObject
 {
 
@@ -41,34 +47,30 @@ public:
     QString querySnapshots();
     bool loadSnapshot(QString snapshotName);
 
-    void enableCommandQueueing(bool enable);
+signals:
 
-    // need to create signals thing we need to send to SocketCommandInterface
+    void humanResponseReceived(QString text);
 
-public slots:
+    void eventReceived(QString text);
+
+    void qmpInterfaceReady();
+
+    /**
+     * These three signals are consumed by SocketCommandInterface, callers should ignore
+     */
+    void connectSocket();
+    void writeDataToSocket(QString msg);
+    void closeSocket();
+
+protected slots:
+
+    // Slots are called data received by the SocketCommandInterface object
 
     void handleQmpGreeting(QJsonObject msg);
 
     void handleQmpEvent(QJsonObject obj);
 
     void handleQmpReturn(QJsonObject obj);
-
-
-signals:
-
-    void connectSocket();
-
-    void writeDataToSocket(QString msg);
-
-    void closeSocket();
-
-    void humanResponseReceived(QString text);
-
-    void eventReceived(QString text);
-
-
-
-
 
 protected:
     /// This sends the QMP response to the greeting it gives us to bring the QMP interface operational
@@ -79,9 +81,6 @@ protected:
 
     /// Called after getting a response that sends the state machine back to the READY state
     void dequeRemainingCommands();
-
-    /// True if commands will be queued and sent when the state machine returns to the READY state
-    bool theQueuingFlag;
 
     enum class QueuedCommandType
     {
@@ -109,15 +108,10 @@ protected:
 
     QmpState theState;
 
-
-
-
     /// The low-leve socket communication code runs in it's own thread
     QThread* theSocketThread;
 
     SocketCommandInterface* theQmpSocket;
-
-
 };
 
 #endif // QMPSOCKETMGR_H

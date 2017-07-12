@@ -208,7 +208,10 @@ void BlastProcessing::spawnRunner(int instanceId)
     connect(runnerThread, &QThread::started,
             runner,       &QemuRunner::runnerThreadStart);
 
-
+    runner->useQemuEmulator(ui->theUseQemuCb->isChecked(),
+                            ui->theQemuSnapshot->text(),
+                            ui->theQemuUseKeysCb->isChecked(),
+                            ui->theKeystrokeValues->text());
 
     theSignalMapper.setMapping(runnerThread, runner);
 

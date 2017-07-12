@@ -22,18 +22,18 @@ public:
 
 signals:
 
-    void connectToQmp();
-
     void eventReceived(QString text);
 
     void hummanCommandResponse(QString text);
 
     void errorReport(QString text);
 
+    void qemuQmpReady();
+
 public slots:
 
     // Emulation control functions
-    void startEmulator(QemuConfiguration & cfg );
+    void startEmulator(QemuConfiguration & cfg, int instanceId = 0);
 
     /**
      * Stops the QEMU process via the quit command
@@ -84,8 +84,6 @@ protected:
     void reportError(QString text);
 
     QProcess* theProcess;
-
-    uint16_t theStartingPortNumber;
 
     QmpSocketMgr* theQmpController;
 

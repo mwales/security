@@ -16,7 +16,6 @@ const QString EVENT_TS_USECS = "microseconds";
 
 QmpSocketMgr::QmpSocketMgr(QString host, uint16_t portNumber, QObject* parent):
     QObject(parent),
-    theQueuingFlag(true),
     theState(QmpState::NOT_CONNECTED)
 {
     theQmpSocket = new SocketCommandInterface(host, portNumber);
@@ -218,11 +217,6 @@ bool QmpSocketMgr::loadSnapshot(QString snapshotName)
     return false;
 }
 
-void QmpSocketMgr::enableCommandQueueing(bool enable)
-{
-    theQueuingFlag = enable;
-}
-
 void QmpSocketMgr::handleQmpGreeting(QJsonObject msg)
 {
     // We will retrieve the version of Qemu from the greeting
@@ -343,6 +337,8 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
     {
         qDebug() << "QEMU QMP interface ready (capability response received)";
         theState = QmpState::READY;
+
+        emit qmpInterfaceReady();
 
         dequeRemainingCommands();
         return;

@@ -9,7 +9,6 @@
 QemuProcessManager::QemuProcessManager(QObject *parent):
     QObject(parent),
     theProcess(nullptr),
-    theStartingPortNumber(20000),
     theQmpController(nullptr)
 {
 
@@ -38,11 +37,11 @@ QemuProcessManager::~QemuProcessManager()
 
 
 // Emulation control functions
-void QemuProcessManager::startEmulator(QemuConfiguration & cfg)
+void QemuProcessManager::startEmulator(QemuConfiguration & cfg, int instanceId)
 {
     std::vector<std::string> args;
     std::string cmd;
-    if (!cfg.getCommandLine(cmd, args))
+    if (!cfg.getCommandLine(cmd, args, instanceId))
     {
         reportError("Error building emulator command, can't start!");
         return;
@@ -54,7 +53,9 @@ void QemuProcessManager::startEmulator(QemuConfiguration & cfg)
     {
             commandArgs.push_back(singleArg->c_str());
     }
-    theStartingPortNumber = cfg.getStartingPortNumber();
+
+    uint16_t qmpPortNum = cfg.getStartingPortNumber();
+    qmpPortNum += instanceId * cfg.getNumberOfPortsPerInstance();
 
     if (theProcess != nullptr)
     {
@@ -89,12 +90,15 @@ void QemuProcessManager::startEmulator(QemuConfiguration & cfg)
         qWarning() << "Process failed to start";
     }
 
-    theQmpController = new QmpSocketMgr("127.0.0.1", theStartingPortNumber, this);
+    theQmpController = new QmpSocketMgr("127.0.0.1", qmpPortNum, this);
 
+    // Signals from the QMP object we are just passing up to the QemuProcessManager
     connect(theQmpController,      &QmpSocketMgr::eventReceived,
             this,                  &QemuProcessManager::eventReceived);
     connect(theQmpController,      &QmpSocketMgr::humanResponseReceived,
             this,                  &QemuProcessManager::hummanCommandResponse);
+    connect(theQmpController,      &QmpSocketMgr::qmpInterfaceReady,
+            this,                  &QemuProcessManager::qemuQmpReady);
 
 }
 
