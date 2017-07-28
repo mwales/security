@@ -20,6 +20,8 @@ public:
 
     ~QemuProcessManager();
 
+    bool isRunning();
+
 signals:
 
     void eventReceived(QString text);
@@ -29,6 +31,8 @@ signals:
     void errorReport(QString text);
 
     void qemuQmpReady();
+
+    void qemuStopped();
 
 public slots:
 

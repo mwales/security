@@ -29,6 +29,7 @@ QemuRunner::QemuRunner(int id, QemuConfiguration const & cfg):
 
 void QemuRunner::stopTests()
 {
+    qDebug() << __PRETTY_FUNCTION__;
     theRunFlag = false;
 }
 
@@ -73,7 +74,16 @@ void QemuRunner::setTimeout(int secs)
 void QemuRunner::runnerProcessError(QProcess::ProcessError err)
 {
     // Even though a process crashed, you have to wait for the complete signal to get called
-    qDebug() << "Pre-Process encountered an error" << theRunningProcess->errorString();
+    qDebug() << "Qemu Script Process encountered an error" << theRunningProcess->errorString();
+
+    theBadErrorFlag = true;
+
+    theRunningProcess->deleteLater();
+    theRunningProcess = nullptr;
+
+    theProgressUpdateTimer->stop();
+
+    startNextState();
 }
 
 void QemuRunner::runnerProcessComplete(int exitCode)
@@ -82,14 +92,15 @@ void QemuRunner::runnerProcessComplete(int exitCode)
     qDebug() << "Process COMPLETE";
 
     theRunningProcess->deleteLater();
+    theRunningProcess = nullptr;
 
     startNextState();
 }
 
 void QemuRunner::tickUpdate()
 {
-    // qDebug() << "Tick " << theCurrentProcTime << " for instance " << theInstanceId
-    //          << ", timeout at " << theTimeout << " ticks";
+    qDebug() << "Tick " << theCurrentProcTime << " for instance " << theInstanceId
+             << ", timeout at " << theTimeout << " ticks";
 
     if ( (theState == RunnerState::PRE_RUNNING) ||
          (theState == RunnerState::PERI_RUNNING) ||
@@ -125,6 +136,70 @@ void QemuRunner::startNextState()
     switch(theState)
     {
     case RunnerState::NOT_RUNNING:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=NOT_RUNNING, theBadErrorFlag=" << theBadErrorFlag;
+        break;
+
+    case RunnerState::STARTING_QEMU:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=STARTING_QEMU, theBadErrorFlag=" << theBadErrorFlag;
+        break;
+
+    case RunnerState::PRE_RUNNING:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=PRE_RUNNING, theBadErrorFlag=" << theBadErrorFlag;
+        break;
+
+    case RunnerState::PERI_RUNNING:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=PERI_RUNNING, theBadErrorFlag=" << theBadErrorFlag;
+        break;
+
+    case RunnerState::POST_RUNNING:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=POST_RUNNING, theBadErrorFlag=" << theBadErrorFlag;
+        break;
+
+    case RunnerState::SAVE_RESULTS:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=SAVE_RESULT, theBadErrorFlag=" << theBadErrorFlag;
+        break;
+    
+    default:
+        qDebug() << __PRETTY_FUNCTION__ << ", theState=!!!! WTFFFFFFF !!!, theBadErrorFlag=" << theBadErrorFlag;
+
+    }
+
+
+    if (theBadErrorFlag)
+    {
+        // Something bad happened, shut down everything and restart
+        emit testComplete("Blast Processing Error");
+
+        // Sleep for a bit to avoid making core unusable if this error repeats
+        QThread::sleep(2);
+
+        // If it is running, stop it
+        if ( (theQemuProcess != nullptr) &&
+             (theQemuProcess->isRunning()) )
+        {
+            qDebug() << "Stopping QEMU on instance" << theInstanceId << "because of bad error flag";
+            theQemuProcess->stopEmulator();
+            return;
+        }
+
+        // If it is instantiated, delete it
+        if (theQemuProcess != nullptr)
+        {
+            qDebug() << "Deleting QEMU manager for instance" << theInstanceId << "because of bad error";
+            delete theQemuProcess;
+            theQemuProcess = nullptr;
+        }
+
+        // Restart the state machine
+        qDebug() << "Restarting the state machine for QEMU Runner" << theInstanceId;
+        theState = RunnerState::NOT_RUNNING;
+
+    }
+
+    switch(theState)
+    {
+    case RunnerState::NOT_RUNNING:
+        theBadErrorFlag = false;
         theState = RunnerState::STARTING_QEMU;
 
         if (theUseQemuFlag)
@@ -168,9 +243,9 @@ void QemuRunner::startNextState()
         theState = RunnerState::POST_RUNNING;
 
         // Need to load the snapshot and send keystrokes
+        executePeriState();
 
 
-        startScript(thePostScript);
 
         return;
 
@@ -261,6 +336,19 @@ void QemuRunner::qemuStarted()
     startNextState();
 }
 
+void QemuRunner::qemuStopped()
+{
+    if (theRunFlag && !theBadErrorFlag)
+    {
+        qWarning() << "QEMU" << theInstanceId << "died when it shouldn't have";
+        theBadErrorFlag = true;
+    }
+    else
+    {
+        qWarning() << "QEMU" << theInstanceId << "died, but pulled plug on him";
+    }
+}
+
 void QemuRunner::stopQemu()
 {
     if (theUseQemuFlag)
@@ -273,6 +361,21 @@ void QemuRunner::stopQemu()
     qDebug() << "Runner instance " << theInstanceId << " stopping";
     theProgressUpdateTimer->stop();
     emit runnerStopped(this);
+}
+
+void QemuRunner::executePeriState()
+{
+    // Load QEMU snapshot if configured
+    if (!theQemuSnapshotName.isEmpty())
+    {
+        theQemuProcess->loadEmulatorState(theQemuSnapshotName);
+    }
+
+    // Send QEMu keystrokes if configured
+
+
+    // Execute the script
+    startScript(thePostScript);
 }
 
 void QemuRunner::useQemuEmulator(bool enable,

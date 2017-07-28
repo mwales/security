@@ -34,7 +34,18 @@ QemuProcessManager::~QemuProcessManager()
     // theProcess cleaned up by QObject
 }
 
-
+bool QemuProcessManager::isRunning()
+{
+    if ( (theProcess->state() == QProcess::Running) ||
+         (theProcess->state() == QProcess::Starting) )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
 // Emulation control functions
 void QemuProcessManager::startEmulator(QemuConfiguration & cfg, int instanceId)
@@ -216,6 +227,12 @@ void QemuProcessManager::screenShot(QString filename)
 
 void QemuProcessManager::sendHumanCommandViaQmp(QString hciCmd)
 {
+    if (theQmpController == nullptr)
+    {
+        qWarning() << "There is no QEMU running to query for snapshot information";
+        return;
+    }
+
     if (!theQmpController->executeHumanMonitorCommand(hciCmd))
     {
         qDebug() << "Error from QMP when sending the humman command command";
@@ -268,6 +285,9 @@ void QemuProcessManager::qemuError(QProcess::ProcessError err)
         qWarning() << "QEMU undocumented error!";
 
     }
+
+    delete theProcess;
+    theProcess = nullptr;
 }
 
 void QemuProcessManager::qemuFinished(int exitCode, QProcess::ExitStatus status)
@@ -285,6 +305,8 @@ void QemuProcessManager::qemuFinished(int exitCode, QProcess::ExitStatus status)
     default:
         qDebug() << "QEMU has an invalid exit status, exit code =" << exitCode;
     }
+
+    emit qemuStopped();
 
     theProcess->deleteLater();
     theProcess = nullptr;

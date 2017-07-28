@@ -49,6 +49,43 @@ void SocketCommandInterface::writeData(QString data)
 
 void SocketCommandInterface::destroyConnection()
 {
+    qDebug() << __PRETTY_FUNCTION__ << "Not sure if this is a good idea as a regular function";
+
+    switch(theSocket->state())
+    {
+    case QAbstractSocket::UnconnectedState:
+        qDebug() << "Socket state is unconnected";
+        break;
+
+    case QAbstractSocket::HostLookupState:
+        qDebug() << "Socket state is HostLookupState";
+        break;
+
+    case QAbstractSocket::ConnectingState:
+        qDebug() << "Socket state is ConnectingState";
+        break;
+
+    case QAbstractSocket::ConnectedState:
+        qDebug() << "Socket state is ConnectedState";
+        break;
+
+    case QAbstractSocket::BoundState:
+        qDebug() << "Socket state is BoundState";
+        break;
+
+    case QAbstractSocket::ClosingState:
+        qDebug() << "Socket state is ClosingState";
+        break;
+
+    case QAbstractSocket::ListeningState:
+        qDebug() << "Socket state is ListeningState";
+        break;
+
+    default:
+        qCritical() << "Completely invalid socket state returned in " << __PRETTY_FUNCTION__;
+    }
+
+
     if (theConnectedFlag)
     {
         theSocket->close();

@@ -55,6 +55,8 @@ protected slots:
 
     void qemuStarted();
 
+    void qemuStopped();
+
 protected:
 
     void startNextState();
@@ -70,6 +72,8 @@ protected:
     void startQemu();
 
     void stopQemu();
+
+    void executePeriState();
 
 
     enum class RunnerState
@@ -102,7 +106,7 @@ protected:
     int theProgressPerTick;
 
     bool theRunFlag;
-
+    bool theBadErrorFlag;
 
     bool theUseQemuFlag;
     QemuProcessManager* theQemuProcess;
