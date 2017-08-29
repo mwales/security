@@ -32,6 +32,8 @@ uint8_t rcon(uint8_t val);
 
 void mixColumns(uint8_t* colOf4Nums);
 void mixColumnsBlock(uint8_t* dataBlock);
+void invMixColumns(uint8_t* colOf4Nums);
+void invMixColumnsBlock(uint8_t* dataBlock);
 
 void xorBlock(uint8_t* blockToModify, uint8_t* blockToXorWith);
 
@@ -305,11 +307,35 @@ void mixColumns(uint8_t* colOf4Nums)
     }
 }
 
+void invMixColumns(uint8_t* colOf4Nums)
+{
+    uint8_t results[4];
+
+    results[0] = gmul(14, colOf4Nums[0]) ^ gmul(11, colOf4Nums[1]) ^ gmul(13, colOf4Nums[2]) ^ gmul(9 , colOf4Nums[3]);
+    results[1] = gmul(9 , colOf4Nums[0]) ^ gmul(14, colOf4Nums[1]) ^ gmul(11, colOf4Nums[2]) ^ gmul(13, colOf4Nums[3]);
+    results[2] = gmul(13, colOf4Nums[0]) ^ gmul(9 , colOf4Nums[1]) ^ gmul(14, colOf4Nums[2]) ^ gmul(11, colOf4Nums[3]);
+    results[3] = gmul(11, colOf4Nums[0]) ^ gmul(13, colOf4Nums[1]) ^ gmul(9 , colOf4Nums[2]) ^ gmul(14, colOf4Nums[3]);
+
+    for(int i = 0; i < 4; i++)
+    {
+        colOf4Nums[i] = results[i];
+    }
+}
+
+
 void mixColumnsBlock(uint8_t* dataBlock)
 {
     for(int i = 0; i < 16; i+= 4)
     {
         mixColumns(dataBlock + i);
+    }
+}
+
+void invMixColumnsBlock(uint8_t* dataBlock)
+{
+    for(int i = 0; i < 16; i+= 4)
+    {
+        invMixColumns(dataBlock + i);
     }
 }
 
@@ -330,7 +356,7 @@ void executeTestFunctions()
     printf("MixCol(tv3) = 0x%02x 0x%02x 0x%02x 0x%02x\n", (int) tv3[0], (int) tv3[1], (int) tv3[2], (int) tv3[3]);
     dumpBytes(tv3, 4);
 
-    uint8_t key1[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t key1[] = {0xc3, 0x7a, 0x9d, 0x24, 0x00, 0x16, 0x72, 0x14, 0x9f, 0x1a, 0x90, 0x1c, 0x11, 0x64, 0xef, 0xa9};
     uint8_t* expKey1;
     expandKey( key1, 128, &expKey1);
     dumpBytes(expKey1, 176);
@@ -340,7 +366,7 @@ void executeTestFunctions()
     expandKey( key2, 128, &expKey2);
     dumpBytes(expKey2, 176);
 
-    uint8_t d1[]   = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+    uint8_t d1[]   = {0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40};
 
     std::cout << "\n\n\n";
     std::cout << "KEY:" << std::endl;
