@@ -121,3 +121,77 @@ Units:
 * x/8xb $eip = examine 8 bytes at EIP address (in hex)
 * x/4xw addr = examine 4 32-bit words at address (in hex)
 
+### Controlling execution
+
+* step = steps 1 instruction, including into function
+* next = steps 1 instruction, not diving into functions
+* finish = continue execution until we leave this function
+* continue = detach debugger and let the code run
+
+### Scripting a break point
+
+break someFunc
+commands
+  i r
+end
+
+The commands command in GDB also has an argument.  If no arg passed, it assumes
+you are trying to script the last breakpoint added.  Otherwise, pass the
+breakpoint number of the breakpoint you are trying to script
+
+# GDB Custom Commands / Functions
+
+GDB functions / custom commands have an unlimited number of args
+
+Number of args passed
+
+  $argc
+
+Args themselves:
+
+  $arg0
+  $arg1
+  ... and so on
+
+GDB allows local internal variables (convenience variables)
+
+  set $myVar = 0x1234
+
+# GDB function to print out wstrings
+
+define printWString
+
+  if $argc != 1
+
+    printf "Usage incorrect, provide the starting address of the wstring\n"
+  else 
+
+    set $addressOfWString = $arg0
+    set $index = 0
+    set $currentChar = *($addressOfWString + $index)
+    while $currentChar != 0x0
+      printf "%c", $currentChar
+      set $index = $index + 2
+      set $currentChar = *($addressOfWString + $index)
+    end
+  
+    printf "\n"
+  end
+end
+document printWString
+Prints a wide string (16-bit characters) starting at the addressed passed to it until it reaches 0x0000
+end
+
+define printQString
+  if $argc != 1
+    printf "Incorrect usage, provide the address of the QString\n"
+  else
+    set $addressOfString = $arg0 + 0x18
+
+    printWString $addressOfString
+  end
+end
+document printQString
+Prints a QString data string using printWString
+end
+
