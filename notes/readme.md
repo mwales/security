@@ -195,3 +195,24 @@ document printQString
 Prints a QString data string using printWString
 end
 
+# Installing IDA 6.95 on Linux
+
+If you don't do the following steps on Ubuntu Linux derivatives around trusty (14.04), you will get 
+all of the Ida Pro menu options all squished together, and the drop down menus will be blank.
+
+As documented in the blog post: http://www.hexblog.com/?p=1048
+
+<code>
+sudo dpkg --add-architecture i386
+sudo apt-get update
+sudo apt-get install libc6-i686:i386 libexpat1:i386 libffi6:i386 libfontconfig1:i386 libfreetype6:i386 libgcc1:i386 libglib2.0-0:i386 libice6:i386 libpcre3:i386 libpng12-0:i386 libsm6:i386 libstdc++6:i386 libuuid1:i386 libx11-6:i386 libxau6:i386 libxcb1:i386 libxdmcp6:i386 libxext6:i386 libxrender1:i386 zlib1g:i386 libx11-xcb1:i386 libdbus-1-3:i386 libxi6:i386 libsm6:i386 libcurl3:i386 
+
+# In addition, it is also necessary to install the
+# following packages, for IDA to present a usable
+# & well-integrated GUI on many Debian & Ubuntu
+# desktops. If the set of dependencies above are
+# not enough to obtain a slick UI, please 
+# install the following:
+
+sudo apt-get install libgtk2.0-0:i386 gtk2-engines-murrine:i386 gtk2-engines-pixbuf:i386 libpango1.0-0:i386
+</code>
