@@ -11,4 +11,6 @@ ctf, binary utils, debugging, notes
   Behaves like a copy command for a single file at a time.  Works on both
   Linux and Windows.
 
-
+* entropy : Two python utilities that were posted on the internet (not my own
+  source) for determing entropy of a file (and a good indicator if a file is
+  compressed or encrypted)
