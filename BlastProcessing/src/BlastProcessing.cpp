@@ -19,6 +19,14 @@
 #include "QemuConfiguration.h"
 #include "QemuRunner.h"
 
+#ifdef BLAST_PROCESSING_DEBUG
+   #define BlastPDebug     std::cout << "BLAST_P > "
+   #define BlastPWarn      std::cout << "BLAST_P > ** WARN ** "
+#else
+   #define BlastPDebug     if(0) std::cout
+   #define BlastPWarn      if(0) std::cout
+#endif
+
 const QString PRE_COMMAND_KEY =         "PRE_COMMAND";
 const QString PERI_COMMAND_KEY =        "PERI_COMMAND";
 const QString USE_QEMU_KEY =            "USE_QEMU";
@@ -107,7 +115,7 @@ void BlastProcessing::runnerStopped(QObject* stoppedRunnerQO)
 
     if (!stoppedRunner)
     {
-        qDebug() << "Invalid runner object called " << __PRETTY_FUNCTION__;
+        BlastPDebug << "Invalid runner object called " << __PRETTY_FUNCTION__ << std::endl;
         return;
     }
 
@@ -115,7 +123,7 @@ void BlastProcessing::runnerStopped(QObject* stoppedRunnerQO)
     {
         if (singleRunner.second.first == stoppedRunner)
         {
-            qDebug() << "Runner" << stoppedRunner->getInstanceId() << "stopped";
+            BlastPDebug << "Runner" << stoppedRunner->getInstanceId() << "stopped" << std::endl;
 
             delete stoppedRunner;
 
@@ -127,8 +135,8 @@ void BlastProcessing::runnerStopped(QObject* stoppedRunnerQO)
         }
     }
 
-    qWarning() << "Runner" << stoppedRunner->getInstanceId()
-               << "stopped, but we don't have record of it starting";
+    BlastPWarn << "Runner" << stoppedRunner->getInstanceId()
+               << "stopped, but we don't have record of it starting" << std::endl;
 
 }
 
@@ -176,7 +184,7 @@ void BlastProcessing::setNumInstancesUpdated(int numProcesses)
         // Dropped the number of cores to use
         while(numProcesses < theNumInstancesToRun)
         {
-            qDebug() << "Stopping an instance";
+            BlastPDebug << "Stopping an instance" << std::endl;
             theRunners[theNumInstancesToRun-1].first->stopTests();
             theNumInstancesToRun--;
         }
@@ -186,7 +194,7 @@ void BlastProcessing::setNumInstancesUpdated(int numProcesses)
         // Dropped the number of cores to use
         while(numProcesses > theNumInstancesToRun)
         {
-            qDebug() << "Stopping an instance";
+            BlastPDebug << "Stopping an instance" << std::endl;
             spawnRunner(theNumInstancesToRun);
             theNumInstancesToRun++;
         }
@@ -201,7 +209,7 @@ void BlastProcessing::spawnRunner(int instanceId)
     QThread* runnerThread = new QThread();
     runner->moveToThread(runnerThread);
 
-    qDebug() << "RunnerThreaed = " << runnerThread;
+    BlastPDebug << "RunnerThreaed = " << runnerThread << std::endl;
 
     connect(runner,       &QemuRunner::runnerStopped,
             this,         &BlastProcessing::runnerStopped);
@@ -227,13 +235,13 @@ void BlastProcessing::spawnRunner(int instanceId)
     if (instanceId < NUM_RUNNER_UI_CONTROLS)
     {
         struct BlastProcessing::ProgressControls pc = theRunnerStatusUi[instanceId];
-        connect(runner,          &QemuRunner::testProgress,
+        connect(runner,          &BPRunner::testProgress,
                 pc.theProgress,  &QProgressBar::setValue);
-        connect(runner,          &QemuRunner::testComplete,
+        connect(runner,          &BPRunner::testComplete,
                 pc.theEdit,      &QLineEdit::setText);
     }
 
-    qDebug() << "Blast Processing Thread = " << QThread::currentThread();
+    BlastPDebug << "Blast Processing Thread = " << QThread::currentThread() << std::endl;
     runnerThread->start();
 
     theRunners[instanceId] = std::make_pair(runner, runnerThread);
@@ -313,7 +321,7 @@ void BlastProcessing::saveGuiConfigFile(QString filename)
         errMessage += filename;
         errMessage += " to write BP configuration to:";
         errMessage += outputFile.errorString();
-        qWarning() << errMessage;
+        BlastPWarn << errMessage.toStdString() << std::endl;
         QMessageBox::warning(this, "Error saving BP Config", errMessage);
         return;
     }
@@ -341,7 +349,7 @@ void BlastProcessing::saveGuiConfigFile(QString filename)
             errMessage += ": ";
             errMessage += outputFile.errorString();
 
-            qWarning() << errMessage;
+            BlastPWarn << errMessage.toStdString() << std::endl;
 
             QMessageBox::warning(this, "Error saving BP Config", errMessage);
 
@@ -351,7 +359,7 @@ void BlastProcessing::saveGuiConfigFile(QString filename)
     }
 
     outputFile.close();
-    qDebug() << "Saved BP config" << filename << "successfully";
+    BlastPDebug << "Saved BP config" << filename.toStdString() << "successfully" << std::endl;
 }
 
 void BlastProcessing::loadGuiConfigFile(QString filename)
@@ -364,7 +372,7 @@ void BlastProcessing::loadGuiConfigFile(QString filename)
         errMessage += ": ";
         errMessage += cfgFile.errorString();
 
-        qWarning() << errMessage;
+        BlastPWarn << errMessage.toStdString() << std::endl;
         QMessageBox::critical(this,
                               "File Open Error",
                               errMessage);
@@ -379,7 +387,7 @@ void BlastProcessing::loadGuiConfigFile(QString filename)
         QStringList lineData = singleLine.split('=', QString::SkipEmptyParts);
         if (lineData.length() != 2)
         {
-            qWarning() << "BP parse failure, expect 2 terms: " << singleLine;
+            BlastPWarn << "BP parse failure, expect 2 terms: " << singleLine.toStdString() << std::endl;
             continue;
         }
 
@@ -447,6 +455,6 @@ void BlastProcessing::loadButtonPressed()
 
 void BlastProcessing::invalidateConfig()
 {
-    qDebug() << "Configuration invalid";
+    BlastPWarn << "Configuration invalid" << std::endl;
     theStoredConfigValid = false;
 }

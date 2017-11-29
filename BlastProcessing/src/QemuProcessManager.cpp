@@ -6,17 +6,29 @@
 //    query-events may also be interesting...
 //    query-commands
 
+
+
+#ifdef QEMU_MGR_DEBUG
+   #define QemuDebug     std::cout << "QEMU_DBG> [-] "
+   #define QemuDebugWarn std::cout << "QEMU_DBG> [-] ** WARN ** "
+#else
+   #define QemuDebug     if(0) std::cout
+   #define QemuDebugWarn if(0) std::cout
+#endif
+
 QemuProcessManager::QemuProcessManager(QObject *parent):
     QObject(parent),
     theProcess(nullptr),
     theQmpController(nullptr)
 {
+    // Intentionally empty
+}
 
 }
 
 QemuProcessManager::~QemuProcessManager()
 {
-    qDebug() << __PRETTY_FUNCTION__;
+    QemuDebug << __PRETTY_FUNCTION__ << std::endl;
 
     if (theQmpController && theProcess)
     {
@@ -24,11 +36,11 @@ QemuProcessManager::~QemuProcessManager()
 
         if (theProcess->waitForFinished(3000))
         {
-            qDebug() << "QEMU exitted gracefully";
+            QemuDebug << "QEMU exitted gracefully" << std::endl;
         }
         else
         {
-            qDebug() << "Told QEMU to quit, but it won't listen!!!";
+            QemuDebug << "Told QEMU to quit, but it won't listen!!!" << std::endl;
         }
     }
     // theProcess cleaned up by QObject
@@ -48,11 +60,9 @@ bool QemuProcessManager::isRunning()
 }
 
 // Emulation control functions
-void QemuProcessManager::startEmulator(QemuConfiguration & cfg, int instanceId)
 {
     std::vector<std::string> args;
     std::string cmd;
-    if (!cfg.getCommandLine(cmd, args, instanceId))
     {
         reportError("Error building emulator command, can't start!");
         return;
@@ -66,7 +76,6 @@ void QemuProcessManager::startEmulator(QemuConfiguration & cfg, int instanceId)
     }
 
     uint16_t qmpPortNum = cfg.getStartingPortNumber();
-    qmpPortNum += instanceId * cfg.getNumberOfPortsPerInstance();
 
     if (theProcess != nullptr)
     {
@@ -75,7 +84,7 @@ void QemuProcessManager::startEmulator(QemuConfiguration & cfg, int instanceId)
     }
 
     QString commandLine = QString("%1 %2").arg(systemCommand).arg(commandArgs.join(" "));
-    qInfo() << "QEMU Command Line: " << commandLine;
+    QemuDebug << "QEMU Command Line: " << commandLine.toStdString() << std::endl;
 
     theProcess = new QProcess(this);
     theProcess->setProgram(systemCommand);
@@ -94,11 +103,12 @@ void QemuProcessManager::startEmulator(QemuConfiguration & cfg, int instanceId)
 
     if (theProcess->waitForStarted())
     {
-        qDebug() << "Process started successfully";
+        QemuDebug << "Process started successfully" << std::endl;
     }
     else
     {
-        qWarning() << "Process failed to start";
+
+        QemuDebugWarn << "Process failed to start" << std::endl;
     }
 
     theQmpController = new QmpSocketMgr("127.0.0.1", qmpPortNum, this);
@@ -122,11 +132,11 @@ void QemuProcessManager::stopEmulator()
 
     if(!theQmpController->sendQuit())
     {
-        qDebug() << "Error from QMP when sending the quit command";
+        QemuDebugWarn << "Error from QMP when sending the quit command" << std::endl;
     }
     else
     {
-        qDebug() << "Quit command sent successfully";
+        QemuDebug << "Quit command sent successfully" << std::endl;
     }
 }
 
@@ -134,11 +144,11 @@ void QemuProcessManager::pauseEmulator()
 {
     if (!theQmpController->sendStop())
     {
-        qDebug() << "Error from QMP when sending the stop command";
+        QemuDebugWarn << "Error from QMP when sending the stop command" << std::endl;
     }
     else
     {
-        qDebug() << "Stop command sent successfully";
+        QemuDebug << "Stop command sent successfully" << std::endl;
     }
 }
 
@@ -146,11 +156,11 @@ void QemuProcessManager::continueEmulator()
 {
     if (!theQmpController->sendContinue())
     {
-        qDebug() << "Error from QMP when sending the continue command";
+        QemuDebugWarn << "Error from QMP when sending the continue command" << std::endl;
     }
     else
     {
-        qDebug() << "Continue command sent successfully";
+        QemuDebug << "Continue command sent successfully" << std::endl;
     }
 }
 
@@ -158,11 +168,11 @@ void QemuProcessManager::resetEmulator()
 {
     if (!theQmpController->sendReset())
     {
-        qDebug() << "Error from QMP when sending the reset command";
+        QemuDebugWarn << "Error from QMP when sending the reset command" << std::endl;
     }
     else
     {
-        qDebug() << "Reset command sent successfully";
+        QemuDebug << "Reset command sent successfully" << std::endl;
     }
 }
 
@@ -172,6 +182,7 @@ void QemuProcessManager::saveEmulatorState(QString filename)
     if (!theQmpController->sendStop())
     {
         reportError("Failed when sending the stop command (before saving VM)");
+
         return;
     }
 
@@ -179,16 +190,18 @@ void QemuProcessManager::saveEmulatorState(QString filename)
     if (!theQmpController->executeHumanMonitorCommand(saveVmCmd))
     {
         reportError("Failed to send the savevm command");
+
         return;
     }
 
     if (!theQmpController->sendContinue())
     {
         reportError("Failed to continue emulation after saving VM state");
+
         return;
     }
 
-    qDebug() << "saveEmulatorState completed successfully (commands probably queued)";
+    QemuDebug << "saveEmulatorState completed successfully (commands probably queued)" << std::endl;
 }
 
 void QemuProcessManager::loadEmulatorState(QString filename)
@@ -205,11 +218,11 @@ void QemuProcessManager::powerEmulatorOff()
 {
     if (!theQmpController->sendPowerOff())
     {
-        qDebug() << "Error from QMP when sending the power off command";
+        QemuDebugWarn << "Error from QMP when sending the power off command" << std::endl;
     }
     else
     {
-        qDebug() << "Power off command sent successfully";
+        QemuDebug << "Power off command sent successfully" << std::endl;
     }
 }
 
@@ -217,11 +230,11 @@ void QemuProcessManager::screenShot(QString filename)
 {
     if (!theQmpController->screendump(filename))
     {
-        qDebug() << "Error from QMP when sending the screenshot command";
+        QemuDebugWarn << "Error from QMP when sending the screenshot command" << std::endl;
     }
     else
     {
-        qDebug() << "Screenshot command sent successfully";
+        QemuDebug << "Screenshot command sent successfully" << std::endl;
     }
 }
 
@@ -229,28 +242,28 @@ void QemuProcessManager::sendHumanCommandViaQmp(QString hciCmd)
 {
     if (theQmpController == nullptr)
     {
-        qWarning() << "There is no QEMU running to query for snapshot information";
+        QemuDebugWarn << "There is no QEMU running to query for snapshot information" << std::endl;
         return;
     }
 
     if (!theQmpController->executeHumanMonitorCommand(hciCmd))
     {
-        qDebug() << "Error from QMP when sending the humman command command";
+        QemuDebugWarn << "Error from QMP when sending the humman command command" << std::endl;
     }
     else
     {
-        qDebug() << "Human command command sent successfully";
+        QemuDebug << "Human command command sent successfully" << std::endl;
     }
 }
 
 void QemuProcessManager::qemuStandardOutputReady()
 {
-    qDebug() << "QEMU-stdout:  " << theProcess->readAllStandardOutput();
+    QemuDebug << "QEMU-stdout:  " << theProcess->readAllStandardOutput().toStdString() << std::endl;
 }
 
 void QemuProcessManager::qemuStandardErrorReady()
 {
-    qDebug() << "QEMU-stderr:  " << theProcess->readAllStandardError();
+    QemuDebug << "QEMU-stderr:  " << theProcess->readAllStandardError().toStdString() << std::endl;
 }
 
 void QemuProcessManager::qemuError(QProcess::ProcessError err)
@@ -258,31 +271,31 @@ void QemuProcessManager::qemuError(QProcess::ProcessError err)
     switch(err)
     {
     case QProcess::FailedToStart:
-        qWarning() << "QEMU Failed to Start";
+        QemuDebugWarn << "QEMU Failed to Start" << std::endl;
         break;
 
     case QProcess::Crashed:
-        qWarning() << "QEMU Crashed!";
+        QemuDebugWarn << "QEMU Crashed!" << std::endl;
         break;
 
     case QProcess::Timedout:
-        qWarning() << "QEMU Timed Out, whatever that means";
+        QemuDebugWarn << "QEMU Timed Out, whatever that means" << std::endl;
         break;
 
     case QProcess::WriteError:
-        qWarning() << "QEMU Write Error";
+        QemuDebugWarn << "QEMU Write Error" << std::endl;
         break;
 
     case QProcess::ReadError:
-        qWarning() << "QEMU Read Error";
+        QemuDebugWarn << "QEMU Read Error" << std::endl;
         break;
 
     case QProcess::UnknownError:
-        qWarning() << "QEMU Unknown Error";
+        QemuDebugWarn << "QEMU Unknown Error" << std::endl;
         break;
 
     default:
-        qWarning() << "QEMU undocumented error!";
+        QemuDebugWarn << "QEMU undocumented error!" << std::endl;
 
     }
 
@@ -295,15 +308,15 @@ void QemuProcessManager::qemuFinished(int exitCode, QProcess::ExitStatus status)
     switch(status)
     {
     case QProcess::NormalExit:
-        qDebug() << "QEMU finished normally, exit code =" << exitCode;
+        QemuDebug << "QEMU finished normally, exit code =" << exitCode << std::endl;
         break;
 
     case QProcess::CrashExit:
-        qDebug() << "QEMU finished with a splosion, exit code =" << exitCode;
+        QemuDebugWarn << "QEMU finished with a splosion, exit code =" << exitCode << std::endl;
         break;
 
     default:
-        qDebug() << "QEMU has an invalid exit status, exit code =" << exitCode;
+        QemuDebugWarn << "QEMU has an invalid exit status, exit code =" << exitCode << std::endl;
     }
 
     emit qemuStopped();
@@ -317,6 +330,6 @@ void QemuProcessManager::reportError(QString text)
     /** TODO: Actually use this reportError function in more than occasional places, and make it
      *        do something useful for the user (like a message box) */
 
-    qWarning() << "QemuProcessManager:" << text;
+    QemuDebugWarn << "QemuProcessManager:" << text.toStdString() << std::endl;
     emit errorReport(text);
 }
