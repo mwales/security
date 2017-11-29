@@ -4,6 +4,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 
+#include <iostream>
+#include <sstream>
+
 const QString EXECUTE_KEY   = "execute";
 const QString RETURN_KEY    = "return";
 const QString ARGUMENTS_KEY = "arguments";
@@ -13,6 +16,13 @@ const QString EVENT_TS_KEY = "timestamp";
 const QString EVENT_TS_SECS = "seconds";
 const QString EVENT_TS_USECS = "microseconds";
 
+#ifdef QMP_SOCK_DEBUG
+   #define QmpSockDebug     std::cout << "QMP_SOCK> "
+   #define QmpSockWarn      std::cout << "QMP_SOCK> ** WARN ** "
+#else
+   #define QmpSockDebug     if(0) std::cout
+   #define QmpSockWarn      if(0) std::cout
+#endif
 
 QmpSocketMgr::QmpSocketMgr(QString host, uint16_t portNumber, QObject* parent):
     QObject(parent),
@@ -40,7 +50,7 @@ QmpSocketMgr::QmpSocketMgr(QString host, uint16_t portNumber, QObject* parent):
     connect(theQmpSocket, &SocketCommandInterface::returnMessage,
             this,         &QmpSocketMgr::handleQmpReturn);
 
-    qDebug() << "Got here!";
+    QmpSockDebug << "Got here!" << std::endl;
 
     emit connectSocket();
 
@@ -54,11 +64,11 @@ QmpSocketMgr::~QmpSocketMgr()
     theSocketThread->exit();
     if (theSocketThread->wait(3000))
     {
-        qDebug() << "The socket thread exitted gracefully";
+        QmpSockDebug << "The socket thread exitted gracefully" << std::endl;
     }
     else
     {
-        qDebug() << "The socket thread didn't exit gracefully";
+        QmpSockWarn << "The socket thread didn't exit gracefully" << std::endl;
     }
 
     delete theSocketThread;
@@ -70,18 +80,20 @@ QmpSocketMgr::~QmpSocketMgr()
 
 bool QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "(" << cmd << ")";
+    QmpSockDebug << __PRETTY_FUNCTION__ << "(" << cmd.toStdString() << ")" << std::endl;
 
     if (theState != QmpState::READY)
     {
         if (theState == QmpState::NOT_CONNECTED)
         {
-            qDebug() << "QEMU QMP interface not ready to send human monitor command:" << cmd;
+            QmpSockDebug << "QEMU QMP interface not ready to send human monitor command:"
+                         << cmd.toStdString() << std::endl;
             return false;
         }
         else
         {
-            qDebug() << "Other command in process, HMI command (" << cmd << ") will be enqueued";
+            QmpSockDebug << "Other command in process, HMI command (" << cmd.toStdString()
+                         << ") will be enqueued" << std::endl;
             QPair< QueuedCommandType, QString> qe;
             qe.first = QueuedCommandType::HUMAN_MONITOR_COMMAND;
             qe.second = cmd;
@@ -104,7 +116,7 @@ bool QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
     QJsonDocument jdoc;
     jdoc.setObject(jo);
 
-    qDebug() << "About to send human monitor command";
+    QmpSockDebug << "About to send human monitor command" << std::endl;
 
     emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
     theState = QmpState::WAITING_FOR_HUMAN_COMMAND_RESPONSE;
@@ -113,7 +125,7 @@ bool QmpSocketMgr::executeHumanMonitorCommand(QString cmd)
 
 bool QmpSocketMgr::enableVnc()
 {
-    qDebug() << __PRETTY_FUNCTION__;
+    QmpSockDebug << __PRETTY_FUNCTION__ << std::endl;
     return false;
 }
 
@@ -129,18 +141,19 @@ QString QmpSocketMgr::queryVnc()
 
 bool QmpSocketMgr::screendump(QString filename)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "(" << filename << ")";
+    QmpSockDebug << __PRETTY_FUNCTION__ << "(" << filename.toStdString() << ")" << std::endl;
 
     if (theState != QmpState::READY)
     {
         if (theState == QmpState::NOT_CONNECTED)
         {
-            qDebug() << "QEMU QMP interface not ready to send screendump command";
+            QmpSockWarn << "QEMU QMP interface not ready to send screendump command" << std::endl;
             return false;
         }
         else
         {
-            qDebug() << "Other command in process, screendump (" << filename << ") will be enqueued";
+            QmpSockDebug << "Other command in process, screendump (" << filename.toStdString()
+                         << ") will be enqueued" << std::endl;
             QPair< QueuedCommandType, QString> qe;
             qe.first = QueuedCommandType::SCREENDUMP;
             qe.second = filename;
@@ -163,7 +176,7 @@ bool QmpSocketMgr::screendump(QString filename)
     QJsonDocument jdoc;
     jdoc.setObject(jo);
 
-    qDebug() << "About to send screedump command";
+    QmpSockDebug << "About to send screedump command" << std::endl;
 
     emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
     theState = QmpState::WAITING_FOR_RESPONSE;
@@ -202,7 +215,7 @@ bool QmpSocketMgr::sendCommandQuery()
 
 bool QmpSocketMgr::saveSnapshot(QString snapshotName)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "(" << snapshotName << ")";
+    QmpSockDebug << __PRETTY_FUNCTION__ << "(" << snapshotName.toStdString() << ")" << std::endl;
     return false;
 }
 
@@ -213,7 +226,7 @@ QString QmpSocketMgr::querySnapshots()
 
 bool QmpSocketMgr::loadSnapshot(QString snapshotName)
 {
-    qDebug() << __PRETTY_FUNCTION__ << "(" << snapshotName << ")";
+    QmpSockDebug << __PRETTY_FUNCTION__ << "(" << snapshotName.toStdString() << ")" << std::endl;
     return false;
 }
 
@@ -231,7 +244,7 @@ void QmpSocketMgr::handleQmpGreeting(QJsonObject msg)
 
     QStringList keys = msg.keys();
 
-    qDebug() << "Keys for the greetnig:" << keys;
+    QmpSockDebug << "Keys for the greetnig: " << keys.join(',').toStdString() << std::endl;
 
     QJsonValue qmpVal = msg[QMP_GREETING_KEY];
 
@@ -272,7 +285,7 @@ void QmpSocketMgr::handleQmpGreeting(QJsonObject msg)
     minor = qemuVerObj[QMP_VERSION_MINOR].toInt(-1);
     micro = qemuVerObj[QMP_VERSION_MICRO].toInt(-1);
 
-    qDebug() << QString("Qemu Version: %1.%2.%3").arg(major).arg(minor).arg(micro);
+    QmpSockDebug << QString("Qemu Version: %1.%2.%3").arg(major).arg(minor).arg(micro).toStdString() << std::endl;
 
 
 
@@ -292,7 +305,7 @@ void QmpSocketMgr::handleQmpEvent(QJsonObject obj)
     //  };
 
 
-    qDebug() << __PRETTY_FUNCTION__ << " Keys:" << obj.keys();
+    QmpSockDebug << __PRETTY_FUNCTION__ << " Keys:" << obj.keys().join(',').toStdString() << std::endl;
 
     if (!obj[EVENT_KEY].isString())
     {
@@ -324,18 +337,18 @@ void QmpSocketMgr::handleQmpEvent(QJsonObject obj)
 
     QString displayText = QString("EVENT> %1.%2%3 %4").arg(seconds).arg(usecsPadding.repeated(numPaddingDigits)).arg(usecs).arg(eventText);
 
-    qDebug() << displayText;
+    QmpSockDebug << displayText.toStdString() << std::endl;
 
     emit eventReceived(eventText);
 }
 
 void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
 {
-    qDebug() << __PRETTY_FUNCTION__ << " Keys:" << obj.keys();
+    QmpSockDebug << __PRETTY_FUNCTION__ << " Keys:" << obj.keys().join(',').toStdString() << std::endl;
 
     if (theState == QmpState::WAITING_FOR_CAPABILITY_RESPONSE)
     {
-        qDebug() << "QEMU QMP interface ready (capability response received)";
+        QmpSockDebug << "QEMU QMP interface ready (capability response received)" << std::endl;
         theState = QmpState::READY;
 
         emit qmpInterfaceReady();
@@ -346,7 +359,7 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
 
     if (theState == QmpState::WAITING_FOR_RESPONSE)
     {
-        qDebug() << "QEMU QMP response received";
+        QmpSockDebug << "QEMU QMP response received" << std::endl;
         theState = QmpState::READY;
 
         dequeRemainingCommands();
@@ -355,7 +368,7 @@ void QmpSocketMgr::handleQmpReturn(QJsonObject obj)
 
     if (theState == QmpState::WAITING_FOR_HUMAN_COMMAND_RESPONSE)
     {
-        qDebug() << "QEMU QMP human command response received!";
+        QmpSockDebug << "QEMU QMP human command response received!" << std::endl;
 
         if (obj["return"].isString())
         {
@@ -392,12 +405,13 @@ bool QmpSocketMgr::sendNoParamNoRespCommand(QString command)
     {
         if (theState == QmpState::NOT_CONNECTED)
         {
-            qDebug() << "QEMU QMP interface not ready to send command:" << command;
+            QmpSockWarn << "QEMU QMP interface not ready to send command:" << command.toStdString() << std::endl;
             return false;
         }
         else
         {
-            qDebug() << "Other command in process, command (" << command << ") will be enqueued";
+            QmpSockDebug << "Other command in process, command (" << command.toStdString() 
+                         << ") will be enqueued" << std::endl;
             QPair< QueuedCommandType, QString> qe;
             qe.first = QueuedCommandType::NO_RESPONSE_QMP;
             qe.second = command;
@@ -415,7 +429,7 @@ bool QmpSocketMgr::sendNoParamNoRespCommand(QString command)
     QJsonDocument jdoc;
     jdoc.setObject(jo);
 
-    qDebug() << "About to send command (no parameter, no response):" << command;
+    QmpSockDebug << "About to send command (no parameter, no response):" << command.toStdString() << std::endl;
 
     emit writeDataToSocket(jdoc.toJson(QJsonDocument::Compact));
     theState = QmpState::WAITING_FOR_RESPONSE;
@@ -434,41 +448,41 @@ void QmpSocketMgr::dequeRemainingCommands()
         switch(qe.first)
         {
         case QueuedCommandType::HUMAN_MONITOR_COMMAND:
-            qDebug() << "Dequeued a HUMAN_MONITOR_COMMAND:" << qe.second;
+            QmpSockDebug << "Dequeued a HUMAN_MONITOR_COMMAND:" << qe.second.toStdString() << std::endl;
             executeHumanMonitorCommand(qe.second);
             return;
 
         case QueuedCommandType::ENABLE_VNC:
-            qDebug() << "Unsupported queued command type";
+            QmpSockWarn << "Unsupported queued command type" << std::endl;
             return;
 
         case QueuedCommandType::DISABLE_VNC:
-            qDebug() << "Unsupported queued command type";
+            QmpSockWarn << "Unsupported queued command type" << std::endl;
             return;
 
         case QueuedCommandType::QUERY_VNC:
-            qDebug() << "Unsupported queued command type";
+            QmpSockWarn << "Unsupported queued command type" << std::endl;
             return;
 
         case QueuedCommandType::SCREENDUMP:
-            qDebug() << "Dequeued a SCREENDUMP command, filename:" << qe.second;
+            QmpSockDebug << "Dequeued a SCREENDUMP command, filename:" << qe.second.toStdString() << std::endl;
             screendump(qe.second);
             return;
 
         case QueuedCommandType::NO_RESPONSE_QMP:
-            qDebug() << "Dequeued a NO_RESPONSE_QMP command:" << qe.second;
+            QmpSockDebug << "Dequeued a NO_RESPONSE_QMP command:" << qe.second.toStdString() << std::endl;
             sendNoParamNoRespCommand(qe.second);
             return;
 
         case QueuedCommandType::SAVE_SNAPSHOT:
-            qDebug() << "Unsupported queued command type";
+            QmpSockWarn << "Unsupported queued command type" << std::endl;
             return;
 
         case QueuedCommandType::LOAD_SNAPSHOT:
-            qDebug() << "Unsupported queued command type";
+            QmpSockWarn << "Unsupported queued command type" << std::endl;
             return;
         default:
-            qDebug() << "Invalid queued command type";
+            QmpSockWarn << "Invalid queued command type" << std::endl;
         }
     }
 }

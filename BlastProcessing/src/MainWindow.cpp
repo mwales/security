@@ -14,6 +14,12 @@
 #include "JumboMessageBox.h"
 #include "BlastProcessing.h"
 
+#ifdef MAIN_WIN_DEBUG
+   #define MainWinDebug    std::cout << "MAIN_WIN> "
+#else
+   #define MainWinDebug    if(0) std::cout
+#endif
+
 const QString VM_FILE_SETTING_KEY = "last_used_vm_disk";
 
 const char* IMAGE_FORMATS = "QEMU Copy-on-write (*.qcow2);;Raw (*.raw);;VMWare (*.vmdk);;VirtualBox (*.vdi);;Any (*)";
@@ -206,12 +212,12 @@ void MainWindow::applySpecialFont()
     int fontId = QFontDatabase::addApplicationFont(":/font/font/SEGA.TTF");
     if (-1 == fontId)
     {
-        qWarning() << "Couldn't load the SEGA font";
+        MainWinDebug << "Couldn't load the SEGA font" << std::endl;
         return;
     }
     else
     {
-        qDebug() << "Loaded the SEGA font successfully";
+        MainWinDebug << "Loaded the SEGA font successfully" << std::endl;
     }
 
     QStringList fontList = QFontDatabase::applicationFontFamilies(fontId);

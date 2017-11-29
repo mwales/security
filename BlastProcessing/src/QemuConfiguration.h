@@ -7,13 +7,26 @@
 #include <set>
 #include <map>
 
+/**
+ * This class holds configuration values relating to QEMU (can load and save them to file as well),
+ * and creates the command line command for each instance of QEMU running.
+ */
 class QemuConfiguration
 {
 public:
     QemuConfiguration();
 
+    //@{
+    /// Loading and saving configuration from file
+
     bool saveConfiguration(std::string pathname);
     bool loadConfiguration(std::string pathname);
+
+    //@}
+
+    //@{
+
+    /// Setting and retrieving configuration variables
 
     void setDriveA(std::string filename, bool qcow2Format);
     std::string getDriveA() const;
@@ -67,6 +80,8 @@ public:
 
     bool setPortForwardDestination(uint8_t forwardIndex, uint16_t portDestination);
     uint16_t getPortForwardDestination(uint8_t forwardIndex);
+
+    //@}
 
     /**
      * Returns the command and arg list to run QEMU with the given configuration

@@ -5,6 +5,16 @@
 #include <QJsonParseError>
 #include <QJsonValue>
 
+#include <iostream>
+
+#ifdef SOCK_CMD_DEBUG
+   #define SockCmdDebug     std::cout << "SOCK_CMD> "
+   #define SockCmdWarn      std::cout << "SOCK_CMD> ** WARN ** "
+#else
+   #define SockCmdDebug     if(0) std::cout
+   #define SockCmdWarn      if(0) std::cout
+#endif
+
 SocketCommandInterface::SocketCommandInterface(QString host, int portNumber, QObject* parent):
     QObject(parent),
     theSocket(nullptr),
@@ -34,7 +44,7 @@ SocketCommandInterface::SocketCommandInterface(QString host, int portNumber, QOb
 
 void SocketCommandInterface::startConnection()
 {
-    qDebug() << "About to start connection timer";
+    SockCmdDebug << "About to start connection timer" << std::endl;
 
     theConnectTimer->setSingleShot(true);
     theConnectTimer->start(1000);
@@ -42,47 +52,47 @@ void SocketCommandInterface::startConnection()
 
 void SocketCommandInterface::writeData(QString data)
 {
-    qDebug() << "Write: " << data;
+    SockCmdDebug << "Write: " << data.toStdString() << std::endl;
 
     theSocket->write(data.toStdString().c_str(), data.length());
 }
 
 void SocketCommandInterface::destroyConnection()
 {
-    qDebug() << __PRETTY_FUNCTION__ << "Not sure if this is a good idea as a regular function";
+    SockCmdDebug << __PRETTY_FUNCTION__ << "Not sure if this is a good idea as a regular function" << std::endl;
 
     switch(theSocket->state())
     {
     case QAbstractSocket::UnconnectedState:
-        qDebug() << "Socket state is unconnected";
+        SockCmdDebug << "Socket state is unconnected" << std::endl;
         break;
 
     case QAbstractSocket::HostLookupState:
-        qDebug() << "Socket state is HostLookupState";
+        SockCmdDebug << "Socket state is HostLookupState" << std::endl;
         break;
 
     case QAbstractSocket::ConnectingState:
-        qDebug() << "Socket state is ConnectingState";
+        SockCmdDebug << "Socket state is ConnectingState" << std::endl;
         break;
 
     case QAbstractSocket::ConnectedState:
-        qDebug() << "Socket state is ConnectedState";
+        SockCmdDebug << "Socket state is ConnectedState" << std::endl;
         break;
 
     case QAbstractSocket::BoundState:
-        qDebug() << "Socket state is BoundState";
+        SockCmdDebug << "Socket state is BoundState" << std::endl;
         break;
 
     case QAbstractSocket::ClosingState:
-        qDebug() << "Socket state is ClosingState";
+        SockCmdDebug << "Socket state is ClosingState" << std::endl;
         break;
 
     case QAbstractSocket::ListeningState:
-        qDebug() << "Socket state is ListeningState";
+        SockCmdDebug << "Socket state is ListeningState" << std::endl;
         break;
 
     default:
-        qCritical() << "Completely invalid socket state returned in " << __PRETTY_FUNCTION__;
+        SockCmdWarn << "Completely invalid socket state returned in " << __PRETTY_FUNCTION__ << std::endl;
     }
 
 
@@ -95,13 +105,13 @@ void SocketCommandInterface::destroyConnection()
 
 void SocketCommandInterface::socketConnected()
 {
-    qDebug() << "QMP Connected";
+    SockCmdDebug << "QMP Connected" << std::endl;
     theConnectedFlag = true;
 }
 
 void SocketCommandInterface::socketDisconnected()
 {
-    qDebug() << "QMP Disconnected";
+    SockCmdDebug << "QMP Disconnected" << std::endl;
     theConnectedFlag = false;
 }
 
@@ -185,7 +195,7 @@ void SocketCommandInterface::socketError(QAbstractSocket::SocketError socketErro
         errMsg = "An unidentified error occurred.";
     }
 
-    qWarning() << "QEMU QMP Error: " << errMsg;
+    SockCmdWarn << "QEMU QMP Error: " << errMsg.toStdString() << std::endl;
     emit errorMessage(errMsg);
 
     if (!theConnectedFlag)
@@ -199,7 +209,7 @@ void SocketCommandInterface::socketError(QAbstractSocket::SocketError socketErro
 void SocketCommandInterface::socketDataReady()
 {
     QByteArray newData = theSocket->readAll();
-    qDebug() << "Socket Data:" << newData;
+    SockCmdDebug << "Socket Data:" << newData.data() << std::endl;
 
     theJsonDataStream.append(newData);
 
@@ -210,7 +220,7 @@ void SocketCommandInterface::trySocketConnection()
 {
     if (theConnectedFlag)
     {
-        qDebug() << "trySocketConnection called, but we are already connected!";
+        SockCmdDebug << "trySocketConnection called, but we are already connected!" << std::endl;
         theConnectTimer->stop();
     }
     else
@@ -291,8 +301,8 @@ void SocketCommandInterface::preparseJsonData()
             }
             else
             {
-                qWarning() << "Invalid JSON data.  Found a } without opening { at byte"
-                           << i << "in data stream";
+                SockCmdWarn << "Invalid JSON data.  Found a } without opening { at byte "
+                            << i << "in data stream" << std::endl;
             }
         }
 
@@ -305,8 +315,8 @@ void SocketCommandInterface::preparseJsonData()
             }
             else
             {
-                qWarning() << "Invalid JSON data.  Found a ] without opening [ at byte"
-                           << i << "in data stream";
+                SockCmdWarn << "Invalid JSON data.  Found a ] without opening [ at byte"
+                            << i << "in data stream" << std::endl;
             }
         }
 
@@ -328,33 +338,33 @@ void SocketCommandInterface::preparseJsonData()
 
 void SocketCommandInterface::parseJsonData(QByteArray rawData)
 {
-    qDebug() << "parseJsonData:" << rawData;
+    SockCmdDebug << "parseJsonData:" << rawData.data() << std::endl;
 
     QJsonParseError err;
     QJsonDocument jd = QJsonDocument::fromJson(rawData, &err);
 
     if (jd.isNull())
     {
-        qWarning() << "JSON Data invalid!";
-        qWarning() << "  Parser:" << err.errorString();
+        SockCmdWarn << "JSON Data invalid!" << std::endl;
+        SockCmdWarn << "  Parser:" << err.errorString().toStdString() << std::endl;
         return;
     }
 
     if (jd.isArray())
     {
-        qWarning() << "JSON Data is an array, not handled!";
+        SockCmdWarn << "JSON Data is an array, not handled!" << std::endl;
         return;
     }
 
     if (jd.isEmpty())
     {
-        qDebug() << "JSON Data is empty, weird...";
+        SockCmdDebug << "JSON Data is empty, weird..." << std::endl;
         return;
     }
 
     if (!jd.isObject())
     {
-        qWarning() << "JSON Data isn't an object!?!";
+        SockCmdWarn << "JSON Data isn't an object!?!" << std::endl;
         return;
     }
 
@@ -362,28 +372,26 @@ void SocketCommandInterface::parseJsonData(QByteArray rawData)
 
     if (jo.contains("QMP"))
     {
-        qDebug() << "Handle server greeting";
+        SockCmdDebug << "Handle server greeting" << std::endl;
         emit greetingMessage(jo);
         return;
     }
 
     if (jo.contains("event"))
     {
-        qDebug() << "Handle event";
+        SockCmdDebug << "Handle event" << std::endl;
         emit eventMessage(jo);
         return;
     }
 
     if (jo.contains("return"))
     {
-        qDebug() << "Handle response";
+        SockCmdDebug << "Handle response" << std::endl;
         emit returnMessage(jo);
         return;
     }
 
-    qWarning() << "Received a JSON object, but don't know how to parse!";
-
-
+    SockCmdWarn << "Received a JSON object, but don't know how to parse!" << std::endl;
 
 
 }
