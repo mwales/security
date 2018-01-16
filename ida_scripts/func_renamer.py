@@ -50,11 +50,11 @@ class RenameSelectionGui(object):
 
         self.retranslateUi(Dialog)
         self.buttonBox.accepted.connect(Dialog.accept)
-        self.buttonBox.accepted.connect(okClicked)
+        self.buttonBox.accepted.connect(self.okClicked)
         self.buttonBox.rejected.connect(Dialog.reject)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
-        self.pushButton.clicked.connect(invertAllClicked)
+        self.pushButton.clicked.connect(self.invertAllClicked)
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
@@ -104,12 +104,12 @@ class RenameSelectionGui(object):
                 MakeName(rowData[1], rowData[2])
         print("Renaming complete")
 
-# Qt Slots that are called by the GUI (but they don't exist within the class like a Qt C++ slot should)
-def invertAllClicked():
-    ui.invertAll()
+    # Qt Slots are called by the GUI (but they don't exist within the class like a Qt C++ slot should)
+    def invertAllClicked(self):
+        self.invertAll()
 
-def okClicked():
-    ui.renameFunctions()
+    def okClicked(self):
+        self.renameFunctions()
 
 
 
