@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     theProcessManager(nullptr),
-    theSettings("github-mwales", "blastprocessing"),
+    theSettings("github-mwales", "qemuconfigtool"),
     theSignatureFont(nullptr)
 {
     ui->setupUi(this);
