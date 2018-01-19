@@ -11,7 +11,7 @@ namespace Ui {
 class BlastProcessing;
 }
 
-class QemuRunner;
+class BPRunner;
 class QVBoxLayout;
 class QHBoxLayout;
 class QLineEdit;
@@ -67,7 +67,7 @@ private:
     QemuConfiguration theCfg;
     bool theStoredConfigValid;
 
-    std::map< int, std::pair<QemuRunner*, QThread*> > theRunners;
+    std::map< int, std::pair<BPRunner*, QThread*> > theRunners;
 
     QSignalMapper theSignalMapper;
 

@@ -1,4 +1,4 @@
-#include "QemuRunner.h"
+#include "BPRunner.h"
 #include <QProcess>
 #include <QtDebug>
 #include <QProcessEnvironment>
@@ -8,7 +8,7 @@
 #include "QemuConfiguration.h"
 #include "QemuProcessManager.h"
 
-QemuRunner::QemuRunner(int id, QemuConfiguration const & cfg):
+BPRunner::BPRunner(int id, QemuConfiguration const & cfg):
     theState(RunnerState::NOT_RUNNING),
     theInstanceId(id),
     theCfg(cfg),
@@ -27,13 +27,13 @@ QemuRunner::QemuRunner(int id, QemuConfiguration const & cfg):
     theProgressUpdateTimer = new QTimer(this);
 }
 
-void QemuRunner::stopTests()
+void BPRunner::stopTests()
 {
     qDebug() << __PRETTY_FUNCTION__;
     theRunFlag = false;
 }
 
-void QemuRunner::runnerThreadStart()
+void BPRunner::runnerThreadStart()
 {
     qDebug() << "Qemu Runner Thread = " << QThread::currentThread() << ", ID=" << theInstanceId;
 
@@ -47,7 +47,7 @@ void QemuRunner::runnerThreadStart()
     theProgressUpdateTimer->setInterval(1000);
     theProgressUpdateTimer->setSingleShot(false);
     connect(theProgressUpdateTimer,     &QTimer::timeout,
-            this,                       &QemuRunner::tickUpdate);
+            this,                       &BPRunner::tickUpdate);
 
     theRunFlag = true;
 
@@ -57,21 +57,21 @@ void QemuRunner::runnerThreadStart()
 }
 
 
-void QemuRunner::setScripts(QString pre, QString peri, QString post)
+void BPRunner::setScripts(QString pre, QString peri, QString post)
 {
     thePreScript  = pre;
     thePeriScript = peri;
     thePostScript = post;
 }
 
-void QemuRunner::setTimeout(int secs)
+void BPRunner::setTimeout(int secs)
 {
     qDebug() << "Instance " << theInstanceId << " timeout set to " << theTimeout << "secs";
     theTimeout = secs;
     theProgressPerTick = 100 / theTimeout;
 }
 
-void QemuRunner::runnerProcessError(QProcess::ProcessError err)
+void BPRunner::runnerProcessError(QProcess::ProcessError err)
 {
     // Even though a process crashed, you have to wait for the complete signal to get called
     qDebug() << "Qemu Script Process encountered an error" << theRunningProcess->errorString();
@@ -86,7 +86,7 @@ void QemuRunner::runnerProcessError(QProcess::ProcessError err)
     startNextState();
 }
 
-void QemuRunner::runnerProcessComplete(int exitCode)
+void BPRunner::runnerProcessComplete(int exitCode)
 {
     qDebug() << "QemuRunner Event Handler Thread = " << QThread::currentThread();
     qDebug() << "Process COMPLETE";
@@ -97,7 +97,7 @@ void QemuRunner::runnerProcessComplete(int exitCode)
     startNextState();
 }
 
-void QemuRunner::tickUpdate()
+void BPRunner::tickUpdate()
 {
     qDebug() << "Tick " << theCurrentProcTime << " for instance " << theInstanceId
              << ", timeout at " << theTimeout << " ticks";
@@ -131,7 +131,7 @@ void QemuRunner::tickUpdate()
     }
 }
 
-void QemuRunner::startNextState()
+void BPRunner::startNextState()
 {
     switch(theState)
     {
@@ -258,7 +258,7 @@ void QemuRunner::startNextState()
     }
 }
 
-void QemuRunner::startScript(QString scriptCommand)
+void BPRunner::startScript(QString scriptCommand)
 {
     resetTimers();
 
@@ -288,19 +288,19 @@ void QemuRunner::startScript(QString scriptCommand)
     theRunningProcess->start(scriptCommand, args);
 }
 
-void QemuRunner::resetTimers()
+void BPRunner::resetTimers()
 {
     theCurrentProcTime = -1;
 }
 
-void QemuRunner::seeding()
+void BPRunner::seeding()
 {
     theTestId = qrand();
     qDebug() << "Seeding for " << theInstanceId << " = " << theTestId;
 
 }
 
-void QemuRunner::saveResults()
+void BPRunner::saveResults()
 {
     qDebug() << "Save results";
 
@@ -319,24 +319,24 @@ void QemuRunner::saveResults()
     }
 }
 
-void QemuRunner::startQemu()
+void BPRunner::startQemu()
 {
     qDebug() << __PRETTY_FUNCTION__;
-    theQemuProcess = new QemuProcessManager(this);
+    theQemuProcess = new QemuProcessManager(theInstanceId, this);
 
     connect(theQemuProcess,       &QemuProcessManager::qemuQmpReady,
-            this,                 &QemuRunner::qemuStarted);
+            this,                 &BPRunner::qemuStarted);
 
-    theQemuProcess->startEmulator(theCfg, theInstanceId);
+    theQemuProcess->startEmulator(theCfg);
 }
 
-void QemuRunner::qemuStarted()
+void BPRunner::qemuStarted()
 {
     qDebug() << __PRETTY_FUNCTION__;
     startNextState();
 }
 
-void QemuRunner::qemuStopped()
+void BPRunner::qemuStopped()
 {
     if (theRunFlag && !theBadErrorFlag)
     {
@@ -349,7 +349,7 @@ void QemuRunner::qemuStopped()
     }
 }
 
-void QemuRunner::stopQemu()
+void BPRunner::stopQemu()
 {
     if (theUseQemuFlag)
     {
@@ -363,7 +363,7 @@ void QemuRunner::stopQemu()
     emit runnerStopped(this);
 }
 
-void QemuRunner::executePeriState()
+void BPRunner::executePeriState()
 {
     // Load QEMU snapshot if configured
     if (!theQemuSnapshotName.isEmpty())
@@ -378,7 +378,7 @@ void QemuRunner::executePeriState()
     startScript(thePostScript);
 }
 
-void QemuRunner::useQemuEmulator(bool enable,
+void BPRunner::useQemuEmulator(bool enable,
                                  QString snapshotName,
                                  bool sendKeystrokes,
                                  QString keystrokes)

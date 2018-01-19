@@ -17,7 +17,7 @@
 
 
 #include "QemuConfiguration.h"
-#include "QemuRunner.h"
+#include "BPRunner.h"
 
 #ifdef BLAST_PROCESSING_DEBUG
    #define BlastPDebug     std::cout << "BLAST_P > "
@@ -111,7 +111,7 @@ void BlastProcessing::stopButtonPressed()
 
 void BlastProcessing::runnerStopped(QObject* stoppedRunnerQO)
 {
-    QemuRunner* stoppedRunner = dynamic_cast<QemuRunner*>(stoppedRunnerQO);
+    BPRunner* stoppedRunner = dynamic_cast<BPRunner*>(stoppedRunnerQO);
 
     if (!stoppedRunner)
     {
@@ -205,16 +205,16 @@ void BlastProcessing::setNumInstancesUpdated(int numProcesses)
 
 void BlastProcessing::spawnRunner(int instanceId)
 {
-    QemuRunner* runner = new QemuRunner(instanceId, theCfg);
+    BPRunner* runner = new BPRunner(instanceId, theCfg);
     QThread* runnerThread = new QThread();
     runner->moveToThread(runnerThread);
 
     BlastPDebug << "RunnerThreaed = " << runnerThread << std::endl;
 
-    connect(runner,       &QemuRunner::runnerStopped,
+    connect(runner,       &BPRunner::runnerStopped,
             this,         &BlastProcessing::runnerStopped);
     connect(runnerThread, &QThread::started,
-            runner,       &QemuRunner::runnerThreadStart);
+            runner,       &BPRunner::runnerThreadStart);
 
     runner->useQemuEmulator(ui->theUseQemuCb->isChecked(),
                             ui->theQemuSnapshot->text(),

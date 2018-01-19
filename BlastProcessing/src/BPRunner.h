@@ -9,12 +9,12 @@
 class QemuProcessManager;
 
 
-class QemuRunner : public QObject
+class BPRunner : public QObject
 {
 Q_OBJECT
 
 public:
-    QemuRunner(int id, QemuConfiguration const & cfg);
+    BPRunner(int id, QemuConfiguration const & cfg);
 
     void setScripts(QString pre, QString peri, QString post);
 

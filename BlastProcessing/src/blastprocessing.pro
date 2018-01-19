@@ -20,7 +20,7 @@ SOURCES += main.cpp\
     JumboMessageBox.cpp \
     QemuConfiguration.cpp \
     BlastProcessing.cpp \
-    QemuRunner.cpp
+    BPRunner.cpp
 
 HEADERS  += MainWindow.h \
     QemuProcessManager.h \
@@ -29,7 +29,7 @@ HEADERS  += MainWindow.h \
     JumboMessageBox.h \
     QemuConfiguration.h \
     BlastProcessing.h \
-    QemuRunner.h
+    BPRunner.h
 
 FORMS    += MainWindow.ui \
     JumboMessageBox.ui \
