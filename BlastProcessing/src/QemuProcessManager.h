@@ -16,7 +16,9 @@ class QemuProcessManager : public QObject
     Q_OBJECT
 
 public:
-    QemuProcessManager(QObject *parent = Q_NULLPTR);
+    QemuProcessManager(int instanceId = 0, QObject *parent = Q_NULLPTR);
+
+    QemuProcessManager(QObject *parent);
 
     ~QemuProcessManager();
 
@@ -37,7 +39,7 @@ signals:
 public slots:
 
     // Emulation control functions
-    void startEmulator(QemuConfiguration & cfg, int instanceId = 0);
+    void startEmulator(QemuConfiguration & cfg);
 
     /**
      * Stops the QEMU process via the quit command
@@ -90,6 +92,8 @@ protected:
     QProcess* theProcess;
 
     QmpSocketMgr* theQmpController;
+
+    int theInstanceId;
 
 };
 
