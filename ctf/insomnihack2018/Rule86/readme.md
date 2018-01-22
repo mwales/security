@@ -22,7 +22,7 @@ this mode.
 
 So knowing that, and reading the problem statement, I'm immediately thinking that this is a
 one time pad type of problem.  And since they gave me a plaintext and ciphertext, I should be able
-to extract the key used.  I use my [xor program](../../utils/xorFiles) to xor rule86.txt and
+to extract the key used.  I use my [xor program](../../../utils/xorFiles) to xor rule86.txt and
 rule86.txt.enc together:
 
     ./xor rule86.txt rule86.txt.enc key.out
