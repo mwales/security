@@ -9,21 +9,29 @@
 
 
 #ifdef QEMU_MGR_DEBUG
-   #define QemuDebug     std::cout << "QEMU_DBG> [-] "
-   #define QemuDebugWarn std::cout << "QEMU_DBG> [-] ** WARN ** "
+   #define QemuDebug     std::cout << "QEMU_DBG> [" << theInstanceId << "] "
+   #define QemuDebugWarn std::cout << "QEMU_DBG> [" << theInstanceId << "] ** WARN ** "
 #else
    #define QemuDebug     if(0) std::cout
    #define QemuDebugWarn if(0) std::cout
 #endif
 
-QemuProcessManager::QemuProcessManager(QObject *parent):
+QemuProcessManager::QemuProcessManager(int instanceId, QObject *parent):
     QObject(parent),
     theProcess(nullptr),
-    theQmpController(nullptr)
+    theQmpController(nullptr),
+    theInstanceId(instanceId)
 {
     // Intentionally empty
 }
 
+QemuProcessManager::QemuProcessManager(QObject *parent):
+    QObject(parent),
+    theProcess(nullptr),
+    theQmpController(nullptr),
+    theInstanceId(0)
+{
+    // Intentionally empty
 }
 
 QemuProcessManager::~QemuProcessManager()
@@ -60,9 +68,11 @@ bool QemuProcessManager::isRunning()
 }
 
 // Emulation control functions
+void QemuProcessManager::startEmulator(QemuConfiguration & cfg)
 {
     std::vector<std::string> args;
     std::string cmd;
+    if (!cfg.getCommandLine(cmd, args, theInstanceId))
     {
         reportError("Error building emulator command, can't start!");
         return;
@@ -76,6 +86,7 @@ bool QemuProcessManager::isRunning()
     }
 
     uint16_t qmpPortNum = cfg.getStartingPortNumber();
+    qmpPortNum += theInstanceId * cfg.getNumberOfPortsPerInstance();
 
     if (theProcess != nullptr)
     {

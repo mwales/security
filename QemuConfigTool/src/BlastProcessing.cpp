@@ -43,7 +43,7 @@ const int NUM_RUNNER_UI_CONTROLS = 25;
 BlastProcessing::BlastProcessing(QemuConfiguration const & cfg,
                                  QString theConfigFile,
                                  QWidget *parent) :
-    QMainWindow(parent),
+    QDialog(parent),
     ui(new Ui::BlastProcessing),
     theCfg(cfg),
     theStoredConfigValid(true),

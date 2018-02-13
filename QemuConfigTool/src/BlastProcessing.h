@@ -1,17 +1,24 @@
 #ifndef BLASTPROCESSING_H
 #define BLASTPROCESSING_H
 
-#include <QMainWindow>
+#include <QDialog>
 #include <QSignalMapper>
 #include <utility>
 #include <vector>
 #include "QemuConfiguration.h"
 
 namespace Ui {
-class MainWindow;
+class BlastProcessing;
 }
 
-class BlastProcessing : public QMainWindow
+class BPRunner;
+class QVBoxLayout;
+class QHBoxLayout;
+class QLineEdit;
+class QProgressBar;
+class QLabel;
+
+class BlastProcessing : public QDialog
 {
     Q_OBJECT
 
@@ -52,6 +59,8 @@ private:
     void spawnRunner(int instanceId);
 
     void createProgressControls();
+
+
 
     Ui::BlastProcessing *ui;
 

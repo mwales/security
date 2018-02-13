@@ -37,10 +37,16 @@ int main(int argc, char** argv)
    int len1 = lseek(fd1, 0, SEEK_END);
    int len2 = lseek(fd2, 0, SEEK_END);
 
+   int outputLen;
    if (len1 != len2)
    {
-      std::cerr << "The two files need to be the same length" << std::endl;
-      return 4;
+      std::cerr << "Files are not the same length, output will be truncated"
+                << std::endl;
+      outputLen = (len1 < len2 ? len1 : len2);
+   }
+   else
+   {
+      outputLen = len1;
    }
 
    lseek(fd1, 0, SEEK_SET);
@@ -50,32 +56,32 @@ int main(int argc, char** argv)
    uint8_t* buf2 = new uint8_t[len1];
 
    int bytesRead = 0;
-   while(bytesRead < len1)
+   while(bytesRead < outputLen)
    {
-      bytesRead += read(fd1, &buf1[bytesRead], len1 - bytesRead);
+      bytesRead += read(fd1, &buf1[bytesRead], outputLen - bytesRead);
       std::cout << "Bytes read so far from buf1 " << bytesRead << std::endl;
    }
 
    bytesRead = 0;
-   while(bytesRead < len1)
+   while(bytesRead < outputLen)
    {
-      bytesRead += read(fd2, &buf2[bytesRead], len1 - bytesRead);
+      bytesRead += read(fd2, &buf2[bytesRead], outputLen - bytesRead);
       std::cout << "Bytes read so far from buf2 " << bytesRead << std::endl;
    }
 
-   for(int i = 0x0; i < len1; i++)
+   for(int i = 0x0; i < outputLen; i++)
    {
       buf1[i] = buf1[i] ^ buf2[i];
    }
 
    int bytesWritten = 0;
-   while( (bytesWritten < len1) && (bytesWritten >= 0) )
+   while( (bytesWritten < outputLen) && (bytesWritten >= 0) )
    {
-      bytesWritten += write(fd3, &buf1[bytesWritten], len1 - bytesWritten);
+      bytesWritten += write(fd3, &buf1[bytesWritten], outputLen - bytesWritten);
       std::cout << "Bytes written so far from buf1 " << bytesWritten << std::endl;
    }
 
-   if (bytesWritten != len1)
+   if (bytesWritten != outputLen)
    {
       std::cerr << "Error: " << strerror(errno) << std::endl;
    }

@@ -1,48 +1,36 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2017-05-16T23:55:13
+# Project created by QtCreator 2018-01-19T01:55:04
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = blastprocessing
 TEMPLATE = app
 
+# The following define makes your compiler emit warnings if you use
+# any feature of Qt which as been marked as deprecated (the exact warnings
+# depend on your compiler). Please consult the documentation of the
+# deprecated API in order to know how to port your code away from it.
+DEFINES += QT_DEPRECATED_WARNINGS
 
-SOURCES += main.cpp\
-        MainWindow.cpp \
-    QemuProcessManager.cpp \
-    SocketCommandInterface.cpp \
-    QmpSocketMgr.cpp \
-    JumboMessageBox.cpp \
-    QemuConfiguration.cpp \
-    BlastProcessing.cpp \
-    QemuRunner.cpp
+# You can also make your code fail to compile if you use deprecated APIs.
+# In order to do so, uncomment the following line.
+# You can also select to disable deprecated APIs only up to a certain version of Qt.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-HEADERS  += MainWindow.h \
-    QemuProcessManager.h \
-    SocketCommandInterface.h \
-    QmpSocketMgr.h \
-    JumboMessageBox.h \
-    QemuConfiguration.h \
-    BlastProcessing.h \
-    QemuRunner.h
 
-FORMS    += MainWindow.ui \
-    JumboMessageBox.ui \
+SOURCES += \
+        main.cpp \
+        BlastProcessing.cpp \
+    BPRunner.cpp
+
+HEADERS += \
+        BlastProcessing.h \
+    BPRunner.h
+
+FORMS += \
     BlastProcessing.ui
-
-RESOURCES += \
-    resources.qrc
-
-CONFIG += c++11
-
-# Debug Defines
-DEFINES += QEMU_MGR_DEBUG
-DEFINES += MAIN_WIN_DEBUG
-DEFINES += SOCK_CMD_DEBUG
-DEFINES += QMP_SOCK_DEBUG
-DEFINES += BLAST_PROCESSING_DEBUG

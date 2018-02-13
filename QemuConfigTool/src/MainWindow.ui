@@ -1355,7 +1355,7 @@
   </action>
   <action name="actionAboutApp">
    <property name="text">
-    <string>About Blast Processing...</string>
+    <string>About Qemu Config Tool...</string>
    </property>
   </action>
  </widget>
