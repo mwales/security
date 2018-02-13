@@ -13,4 +13,5 @@ ctf, binary utils, debugging, notes
 
 * entropy : Two python utilities that were posted on the internet (not my own
   source) for determing entropy of a file (and a good indicator if a file is
-  compressed or encrypted)
+  compressed or encrypted).  I realized after making this, binwalk has a -E 
+  filename option that is great, graphs entropy and everything.
