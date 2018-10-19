@@ -123,10 +123,22 @@ Units:
 
 ### Controlling execution
 
-* step = steps 1 instruction, including into function
-* next = steps 1 instruction, not diving into functions
+* p / print = print out a variable (usually will smartly output structures and what not)
+* s / step = steps 1 line of code, including diving into functions
+* n / next = steps 1 instruction, not diving into functions
+* si / stepi = steps 1 assembly instruction, including diving into functions
+* ni / nexti = steps 1 assembly instruction, not diving into functions
 * finish = continue execution until we leave this function
 * continue = detach debugger and let the code run
+
+### Stack stuff
+
+* bt = backtrace
+* up = move debugger up 1 frame
+* down = move debugger down 1 frame
+* frame x = move to frame x
+* info args = list function arg values
+* info locals = list local variables and values
 
 ### Scripting a break point
 
