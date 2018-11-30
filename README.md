@@ -15,3 +15,12 @@ ctf, binary utils, debugging, notes
   source) for determing entropy of a file (and a good indicator if a file is
   compressed or encrypted).  I realized after making this, binwalk has a -E 
   filename option that is great, graphs entropy and everything.
+
+* FindFloats: Tool that will take raw hex, ignores extra non-hex characters,
+  and dumps out all the possible values the hex could be converted to.  For
+  instance, the hex below contained a constant of pi in it
+
+![Find Floats](utils/FindFloat/FindFloatsScreenshot.png)
+
+
+
