@@ -20,7 +20,7 @@ ctf, binary utils, debugging, notes
   and dumps out all the possible values the hex could be converted to.  For
   instance, the hex below contained a constant of pi in it
 
-![Find Floats](utils/FindFloat/FindFloatsScreenshot.png)
+![Find Floats](utils/FindFloats/FindFloatsScreenshot.png)
 
 
 
