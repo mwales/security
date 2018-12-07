@@ -35,6 +35,7 @@ void MainWindow::convertUserData()
 {
    ui->theSimplifiedHex->clear();
    ui->theResults->clearContents();
+   ui->theResults->setRowCount(0);
 
    QString userData = ui->theUserData->text().toUpper();
 
@@ -112,39 +113,52 @@ void MainWindow::crcSearch()
 
             displayData(startByte, curLength, "CRC-8", tempBuffer);
          }
+      }
+   }
+
+   // CRC-16 Search
+   for(int startByte = 0; startByte < theUserHex.length() - 3; startByte++)
+   {
+      for(int curLength = theUserHex.length() - startByte - 2; curLength >= 0; curLength--)
+      {
+         uint16_t crcFromDataHigh = static_cast<uint16_t>(theUserHex.at(curLength)) & 0x00ff;
+         uint16_t crcFromDataLow = static_cast <uint16_t>(theUserHex.at(curLength +1)) & 0x00ff;
+         uint16_t crcFromDataBE = (crcFromDataHigh << 8) + (crcFromDataLow);
+         uint16_t crcFromDataLE = (crcFromDataLow << 8) + (crcFromDataHigh);
 
 
+         uint8_t* bufferStart = reinterpret_cast<uint8_t*>(theUserHex.data()) + startByte;
+
+         std::vector<uint16_t> seedListBE = CrcTool::calculateCrc16Seed(bufferStart,
+                                                                      curLength,
+                                                                      crcFromDataBE);
+         std::vector<uint16_t> seedListLE = CrcTool::calculateCrc16Seed(bufferStart,
+                                                                      curLength,
+                                                                      crcFromDataLE);
+
+         for(std::vector<uint16_t>::iterator it = seedListBE.begin();
+             it != seedListBE.end(); it++)
+         {
+            char tempBuffer[80];
+            sprintf(tempBuffer, "0x%04x", *it);
+
+            displayData(startByte, curLength, "CRC-16 BE", tempBuffer);
+         }
+
+         for(std::vector<uint16_t>::iterator it = seedListLE.begin();
+             it != seedListLE.end(); it++)
+         {
+            char tempBuffer[80];
+            sprintf(tempBuffer, "0x%04x", *it);
+
+            displayData(startByte, curLength, "CRC-16 LE", tempBuffer);
+         }
       }
    }
 }
 
 void MainWindow::displayData(int startByte, int len, std::string crcType, std::string const &  seedVal)
 {
-   //   ui->theResults->clear();
-
-   //   int row = 0;
-   //   int col = 0;
-   //   foreach(DecodedValue dv, theValues.keys())
-   //   {
-   //      QStringList rowData = theValues.value(dv);
-
-   //      if (!row)
-   //      {
-   //         // Size the table correctly
-   //         ui->theResults->setColumnCount(rowData.length());
-   //         ui->theResults->setRowCount(theValues.keys().length());
-   //      }
-
-   //      col = 0;
-   //      foreach(QString cellString, rowData)
-   //      {
-   //         ui->theResults->setItem(row, col, new QTableWidgetItem(cellString));
-   //         col++;
-   //      }
-
-   //      row++;
-   //   }
-
    int rowNum = ui->theResults->rowCount();
    ui->theResults->setRowCount(rowNum + 1);
 

@@ -120,6 +120,7 @@ std::vector<uint8_t> CrcTool::calculateCrc8Seed(uint8_t const * buffer, int leng
    {
       uint8_t curSeed = static_cast<uint8_t>(seed);
       uint8_t crcPossible = calcCrc8(buffer, length, curSeed);
+
       if (crc8 == crcPossible)
       {
          retVal.push_back(static_cast<uint8_t>(seed));
@@ -135,7 +136,9 @@ std::vector<uint16_t> CrcTool::calculateCrc16Seed(uint8_t const * buffer, int le
 
    for (int seed = 0; seed <= 0xffff; seed++)
    {
-      uint16_t crcPossible = calcCrc16(buffer, length, static_cast<uint16_t>(seed));
+      uint16_t curSeed = static_cast<uint16_t>(seed);
+      uint16_t crcPossible = calcCrc16(buffer, length, curSeed);
+
       if (crc16 == crcPossible)
       {
          retVal.push_back(static_cast<uint16_t>(seed));

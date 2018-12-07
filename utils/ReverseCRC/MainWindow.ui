@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>751</width>
+    <width>517</width>
     <height>833</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Hex Decoder</string>
+   <string>CRC Searcher</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -127,7 +127,7 @@
       </column>
       <column>
        <property name="text">
-        <string>End</string>
+        <string>Length</string>
        </property>
       </column>
       <column>
@@ -149,7 +149,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>751</width>
+     <width>517</width>
      <height>22</height>
     </rect>
    </property>

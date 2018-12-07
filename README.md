@@ -22,5 +22,8 @@ ctf, binary utils, debugging, notes
 
 ![Find Floats](utils/FindFloats/FindFloatsScreenshot.png)
 
+* ReverseCRC: Tool that will brute force determine all the possible CRC-8
+  and CRC-16 seed values for an arbitrary blob of hexadecimal data.
 
+![Reverse CRC](utils/ReverseCRC/Screenshot.png)
 
