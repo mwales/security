@@ -1,0 +1,6 @@
+Size of struct stat = 144
+  Offset fo st_ino = 8
+  Offset of st_mode = 24
+  Offset of st_uid = 28
+  Offset of st_gid = 32
+  Offset of st_size = 48
