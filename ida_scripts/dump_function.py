@@ -7,7 +7,12 @@ def dumpFunction(funcName):
 
    endAddr = find_func_end(startAddr)
 
+   # ARM has a bunch of data between functions I typically want to dump (immediates and stuff)
+   endDump = get_next_func(endAddr)
+
    msg("Function address = {} to {}\n".format(hex(startAddr), hex(endAddr)))
+   msg("Dump address = {} to {}\n".format(hex(startAddr), hex(endDump)))
+
    suggestedFilename = funcName + "_" + hex(startAddr) + "_" + hex(endAddr)
 
    saveName = QtWidgets.QFileDialog.getSaveFileName(None, "Select dump filename", suggestedFilename)
@@ -16,9 +21,9 @@ def dumpFunction(funcName):
       msg("No filename selected, exitting\n")
       return
 
-   binData = GetManyBytes(startAddr, endAddr - startAddr, 0)
+   binData = GetManyBytes(startAddr, endDump - startAddr, 0)
 
-   msg("Saving {} bytes to {}\n".format(endAddr - startAddr, saveName[0]))
+   msg("Saving {} bytes to {}\n".format(endDump - startAddr, saveName[0]))
 
    f = open(saveName[0], "w")
    f.write(binData)
