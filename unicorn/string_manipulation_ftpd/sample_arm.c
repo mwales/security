@@ -12,20 +12,10 @@
 #include <string.h>
 
 
-// code to be emulated
-#define ARM_CODE "\x37\x00\xa0\xe3\x03\x10\x42\xe0" // mov r0, #0x37; sub r1, r2, r3
-#define THUMB_CODE "\x83\xb0" // sub    sp, #0xc
-
-// memory address where emulation starts
-#define ADDRESS 0x10000
 
 bool gInstructionTrace = false;
 
 void dumpCpuRegisters(uc_engine* uc);
-
-
-
-
 
 
 void hexDump(unsigned char const * const buffer, unsigned int bufferLen, bool asciiToo)
@@ -281,10 +271,6 @@ static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user
        dumpCpuRegisters(uc);
     }
 
-//    char* fart = (char*) malloc(0x1000);
-//    uc_mem_read(uc, 0x1000, fart, 0x1000);
-//    hexDump(fart, 0x1000, false);
-//    free(fart);
 }
 
 void unmapped_hook(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
@@ -346,15 +332,15 @@ void dumpCpuRegisters(uc_engine* uc)
    uc_reg_read(uc, UC_ARM_REG_R14, &r14);
    uc_reg_read(uc, UC_ARM_REG_R15, &r15);
 
-   printf(" R0 = 0x%08x = %8d", r0, r0);
-   printf(" R1 = 0x%08x = %8d\n", r1, r1);
-   printf(" R2 = 0x%08x = %8d", r2, r2);
-   printf(" R3 = 0x%08x = %8d\n", r3, r3);
-   printf(" R4 = 0x%08x = %8d", r4, r4);
-   printf(" R5 = 0x%08x = %8d\n", r5, r5);
-   printf(" R6 = 0x%08x = %8d", r6, r6);
-   printf(" R7 = 0x%08x = %8d\n", r7, r7);
-   printf(" R8 = 0x%08x = %8d\n", r8, r8);
+   printf("  R0 = 0x%08x = %8d", r0, r0);
+   printf("  R1 = 0x%08x = %8d\n", r1, r1);
+   printf("  R2 = 0x%08x = %8d", r2, r2);
+   printf("  R3 = 0x%08x = %8d\n", r3, r3);
+   printf("  R4 = 0x%08x = %8d", r4, r4);
+   printf("  R5 = 0x%08x = %8d\n", r5, r5);
+   printf("  R6 = 0x%08x = %8d", r6, r6);
+   printf("  R7 = 0x%08x = %8d\n", r7, r7);
+   printf("  R8 = 0x%08x = %8d\n", r8, r8);
    printf(" R12 = 0x%08x = %8d", r12, r12);
    printf(" R13 = 0x%08x = %8d\n", r13, r13);
    printf(" R14 = 0x%08x = %8d", r14, r14);
@@ -362,14 +348,11 @@ void dumpCpuRegisters(uc_engine* uc)
 
 }
 
-
-
-
-
-
 void native_strcat(uc_engine* uc, uint64_t address)
 {
    printf("Call native strcat here!\n");
+
+   // Didn't seem to get here very often, so never implmeneted
 }
 
 void native_realpath(uc_engine* uc, uint64_t address)
@@ -539,6 +522,8 @@ void native_strcpy(uc_engine* uc, uint64_t address)
 
 void stop_emulator_pop(uc_engine* uc, uint64_t address)
 {
+   // The pop instruction in ARM is basicaly a return from function (it
+   // usually will pop the LR into the PC register)
    printf("\n\n\n\nWe hit the pop instruction\n");
 
    uint32_t r0;
@@ -574,6 +559,11 @@ static void test_arm(void)
     err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc);
     CHECK_FOR_UC_ERRORS(err, "Unicorn Open");
 
+
+
+    // Map the memory from the real binary into the emulator memory
+    /// @todo All of these mapped_file_data objects are leaked!
+
     mapped_file_data mfd = readFileIntoMallocBuffer("sub_1C78_0x1c78L_0x1d06L", 0x1c78);
 
     // map memory for this emulation
@@ -596,6 +586,11 @@ static void test_arm(void)
                          roDataSection.mapData);
     CHECK_FOR_UC_ERRORS(err, "RO Data Section Mapping");
 
+
+
+    // I originally forgot during earlier implementations that the stack needed to grow down
+    // towards lower memory locations.
+
     // Create some stack memory
     const uint64_t STACK_ADDR = 0x00010000;
     int r13Sp = STACK_ADDR + 512 * 1024;     // sp register
@@ -605,7 +600,11 @@ static void test_arm(void)
     CHECK_FOR_UC_ERRORS(err, "Stack Memory Mapping");
 
 
-    // Patch in native calls
+
+    // Patch in native calls.  Creates a NOP for the emulator.  But when the instruction trace
+    // function sees the address getting emulated, will call our native hook so we can create
+    // a custom implementation of the code that was called
+
     patch_address_with_native_function(uc, 0x1cb6, native_strcat, 4);
     patch_address_with_native_function(uc, 0x1cc4, native_realpath, 4);
     patch_address_with_native_function(uc, 0x1ccc, native_strstr, 4);
@@ -628,6 +627,12 @@ static void test_arm(void)
     err = uc_reg_write(uc, UC_ARM_REG_R13, &r13Sp);
     CHECK_FOR_UC_ERRORS(err, "Setting r13 / stack pointer");
 
+
+
+    // Hooks
+    /// @todo Which of these are actually good hooks to have?
+    /// @todo Hooks aren't being cleaned up after emulation completes
+
     // tracing all basic blocks with customized callback
     err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
     CHECK_FOR_UC_ERRORS(err, "Hook Block Setup");
@@ -646,10 +651,14 @@ static void test_arm(void)
     CHECK_FOR_UC_ERRORS(err, "Memory Access Hook Setup");
 
 
+
+
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.  Add 1 to the start address to emulate in THUMB mode
     err = uc_emu_start(uc, CODE_START_ADDRESS | 1, CODE_START_ADDRESS + mfd.fileSize -1, 0, 0);
     //CHECK_FOR_UC_ERRORS(err, "Emulation Start");
+
+
 
 
     // now print out some registers
@@ -671,25 +680,8 @@ static void test_arm(void)
 
 int main(int argc, char **argv, char **envp)
 {
-    // dynamically load shared library
-#ifdef DYNLOAD
-    if (!uc_dyn_load(NULL, 0)) {
-        printf("Error dynamically loading shared library.\n");
-        printf("Please check that unicorn.dll/unicorn.so is available as well as\n");
-        printf("any other dependent dll/so files.\n");
-        printf("The easiest way is to place them in the same directory as this app.\n");
-        return 1;
-    }
-#endif
     
     test_arm();
-    //printf("==========================\n");
-    //test_thumb();
-
-    // dynamically free shared library
-#ifdef DYNLOAD
-    uc_dyn_free();
-#endif
     
     return 0;
 }
