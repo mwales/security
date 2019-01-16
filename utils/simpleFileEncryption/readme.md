@@ -39,4 +39,18 @@ To decrypt
 d:
 decrypt_file.bat dontShareDoc.txt.enc /home/otherUser/Desktop/dontShareDoc.txt
 
+# How does this work
+
+If you add -p onto the end of the OpenSSL command, it will print out the salt,
+key, and IV used for the encryption step.
+
+OpenSSL for Ubuntu 16.04 and older uses md5 hash digest function to create the
+key from the password.  Not sure what newer version were changed to, but adding
+the -md md5 option to the newer versions make them compatible with the older
+versions again.
+
+AES 128 Key = md5(password + salt)
+AES 256 Key = AES-128-key + md5(AES-128-key + password + salt)
+
+
 
