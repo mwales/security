@@ -17,7 +17,7 @@ if not %ARGS_COUNT% == 2 (
    goto :eof
 )
 
-%openSslBinary% enc -aes-256-cbc -salt -in %1 -out %2
+%openSslBinary% enc -md md5 -aes-256-cbc -salt -in %1 -out %2
 
 
 
