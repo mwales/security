@@ -25,6 +25,7 @@
 
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.HashMap;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -40,141 +41,168 @@ import ghidra.framework.plugintool.PluginTool;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.pcode.HighFunction;
+import ghidra.program.model.pcode.PcodeOp;
 import ghidra.program.model.pcode.PcodeOpAST;
+import ghidra.program.model.pcode.Varnode;
 import ghidra.program.model.symbol.Reference;
 import ghidra.program.model.symbol.Symbol;
 
 public class NameFunctionsFromTraceFunction extends GhidraScript {
 
-    private Address lastAddr = null;
+	private Address lastAddr = null;
 
-    public class RenameFunctionData {
-
-	Address functionAddressToRename;
-	String functionOldName;
-	String functionNewName;
-
-    }
-
-    Vector<RenameFunctionData> renameData;
-
-    private String debugToFile = "debug.txt";
-    private BufferedWriter debugLog = null;
-    
-    /**
-     * Allows me to log to a file since really large files may cause log to
-     * overflow ghidra console
-     */
-    private void log(String text) {
-	print(text + "\n");
-	System.out.flush();
-
-	if (debugToFile.isEmpty()) {
-		return;
+	public class RenameFunctionData 
+	{
+		Address functionAddressToRename;
+		String functionOldName;
+		Address functionNewNameAddress;
+		String functionNewName;
 	}
 
-	try {
+	Vector<RenameFunctionData> renameDataOld;
+	
+	HashMap<Function,String> renameData;
+	
+	void addFunctionRenameEntry(Address functionToRename,
+	                            Address functionNewNameAddress)
+	{
+		log("Registering func @ " + functionToRename.toString() + " to "
+		    + functionNewNameAddress.toString());
+	}
 
-		if (debugLog == null)
+	private String debugToFile = "debug.txt";
+	private BufferedWriter debugLog = null;
+
+	/**
+	 * Allows me to log to a file since really large files may cause log to
+	 * overflow ghidra console
+	 */
+	private void log(String text) 
+	{
+		print(text + "\n");
+		System.out.flush();
+
+		if (debugToFile.isEmpty()) 
 		{
-			// Open the log file!
-			debugLog = new BufferedWriter(new FileWriter(debugToFile));
+			return;
+		}
+		try 
+		{
+			if (debugLog == null)
+			{
+				// Open the log file!
+				debugLog = new BufferedWriter(new FileWriter(debugToFile));
+			}
+
+			debugLog.write(text + "\n");
+			debugLog.flush();
+		}
+		catch (IOException e)
+		{
+			print(e.getMessage());
+			System.out.flush();
 		}
 
-		debugLog.write(text + "\n");
-		debugLog.flush();
 	}
-	catch (IOException e) {
-		print(e.getMessage());
-		System.out.flush();
-	}
-
-    }
 	
+	private int argNumberForTrace;
 
-    @Override
-    public void run() throws Exception {
-
-        if (currentLocation == null) {
-            log("No Location.");
-            return;
-        }
-
-	PluginTool pluginTool = state.getTool();
-	NumberInputDialog nid = new NumberInputDialog("Argumement Number", 0, 0);
-
-	pluginTool.showDialog(nid);
-
-	if (nid.wasCancelled())
+	@Override
+	public void run() throws Exception 
 	{
-		printf("User canceled");
-		System.out.flush();
-		return;
+		renameData = new HashMap<Function,String>();
+
+		if (currentLocation == null) 
+		{
+			log("No Location.");
+			return;
+		}
+
+		PluginTool pluginTool = state.getTool();
+		NumberInputDialog nid = new NumberInputDialog("Argument Number", 0, 0);
+
+		pluginTool.showDialog(nid);
+
+		if (nid.wasCancelled())
+		{
+			printf("User canceled");
+			System.out.flush();
+			return;
+		}
+
+		argNumberForTrace = nid.getValue();
+
+		Listing listing = currentProgram.getListing();
+
+		Function func = listing.getFunctionContaining(currentAddress);
+
+		if (func == null) 
+		{
+			log("No Function at address " + currentAddress);
+			return;
+		}
+
+		log("Going to argument " + argNumberForTrace + " for trace function " + func.getName());
+
+		DecompInterface decomplib = setUpDecompiler(currentProgram);
+		
+		try 
+		{
+			if (!decomplib.openProgram(currentProgram))
+			{
+				log("Decompile Error: " + decomplib.getLastMessage());
+				return;
+			}
+
+			// call decompiler for all refs to current function
+			Symbol sym = this.getSymbolAt(func.getEntryPoint());
+
+			Reference refs[] = sym.getReferences(null);
+
+			for (int i = 0; (i < refs.length) /* && (i<3) */; i++) 
+			{
+				if (monitor.isCancelled())
+				{
+					break;
+				}
+
+				// get function containing.
+				Address refAddr = refs[i].getFromAddress();
+				Function refFunc = currentProgram.getFunctionManager()
+						.getFunctionContaining(refAddr);
+
+				if (refFunc == null) 
+				{
+					continue;
+				}
+
+				// decompile function
+				// look for call to this function
+				// display call
+				analyzeFunction(decomplib, currentProgram, refFunc, refAddr);
+			}
+		}
+		finally 
+		{
+			decomplib.dispose();
+		}
+
+		lastAddr = null;
 	}
 
-	int argNumberForTrace = nid.getValue();
-
-        Listing listing = currentProgram.getListing();
-
-        Function func = listing.getFunctionContaining(currentAddress);
-
-        if (func == null) {
-            log("No Function at address " + currentAddress);
-            return;
-        }
-
-	log("Going to argument " + argNumberForTrace + " for trace function " + func.getName());
-
-        DecompInterface decomplib = setUpDecompiler(currentProgram);
-        
-        try {
-        	if (!decomplib.openProgram(currentProgram)) {
-        		log("Decompile Error: " + decomplib.getLastMessage());
-        		return;
-        	}
-
-	        // call decompiler for all refs to current function
-	        Symbol sym = this.getSymbolAt(func.getEntryPoint());
-	
-	        Reference refs[] = sym.getReferences(null);
-	
-	        for (int i = 0; i < refs.length; i++) {
-	            if (monitor.isCancelled()) {
-	                break;
-	            }
-	
-	            // get function containing.
-	            Address refAddr = refs[i].getFromAddress();
-	            Function refFunc = currentProgram.getFunctionManager()
-	                    .getFunctionContaining(refAddr);
-	
-	            if (refFunc == null) {
-	                continue;
-	            }
-	
-	            // decompile function
-	            // look for call to this function
-	            // display call
-	            analyzeFunction(decomplib, currentProgram, refFunc, refAddr);
-	        }
-        }
-        finally {
-        	decomplib.dispose();
-        }
-
-        lastAddr = null;
-    }
-
-	private DecompInterface setUpDecompiler(Program program) {
+	private DecompInterface setUpDecompiler(Program program)
+	{
 		DecompInterface decomplib = new DecompInterface();
         
 		DecompileOptions options;
 		options = new DecompileOptions(); 
 		OptionsService service = state.getTool().getService(OptionsService.class);
-		if (service != null) {
+		if (service != null) 
+		{
 			ToolOptions opt = service.getOptions("Decompiler");
 			options.grabFromToolAndProgram(null,opt,program);    	
 		}
+		
         decomplib.setOptions(options);
         
 		decomplib.toggleCCode(true);
@@ -184,136 +212,263 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 		return decomplib;
 	}
 
-    /**
-     * Analyze a functions references
-     */
-    public void analyzeFunction(DecompInterface decomplib, Program prog, Function f, Address refAddr) {
+	/**
+	 * Analyze a functions references
+	 */
+	public void analyzeFunction(DecompInterface decomplib, Program prog, Function f, Address refAddr) 
+	{
 
-        if (f == null) {
-            return;
-        }
+		if (f == null)
+		{
+			return;
+		}
 
-        // don't decompile the function again if it was the same as the last one
-        //
-        if (!f.getEntryPoint().equals(lastAddr))
-            decompileFunction(f, decomplib);
-        lastAddr = f.getEntryPoint();
+		// don't decompile the function again if it was the same as the last one
+		//
+		if (!f.getEntryPoint().equals(lastAddr))
+		{
+			decompileFunction(f, decomplib);
+		}
+		
+		lastAddr = f.getEntryPoint();
 
-        Instruction instr = prog.getListing().getInstructionAt(refAddr);
-        if (instr == null) {
-            return;
-        }
+		Instruction instr = prog.getListing().getInstructionAt(refAddr);
+		if (instr == null) 
+		{
+			return;
+		}
 
-        println(printCall(f, refAddr));
-    }
+		log(printCall(f, refAddr));
+	}
 
+	HighFunction hfunction = null;
 
+	ClangTokenGroup docroot = null;
 
-    HighFunction hfunction = null;
+	public boolean decompileFunction(Function f, DecompInterface decomplib)
+	{
+		// decomplib.setSimplificationStyle("normalize", null);
+		// HighFunction hfunction = decomplib.decompileFunction(f);
 
-    ClangTokenGroup docroot = null;
+		DecompileResults decompRes = decomplib.decompileFunction(f, decomplib.getOptions().getDefaultTimeout(), monitor);
+		//String statusMsg = decomplib.getDecompileMessage();
 
-    public boolean decompileFunction(Function f, DecompInterface decomplib) {
-    	// decomplib.setSimplificationStyle("normalize", null);
-        // HighFunction hfunction = decomplib.decompileFunction(f);
+		hfunction = decompRes.getHighFunction();
+		docroot = decompRes.getCCodeMarkup();
+		
+		for(int i = 0; i < docroot.numChildren(); i++)
+		{
+			log("Child " + i + ": " + docroot.Child(i).toString());
+		}
 
-        DecompileResults decompRes = decomplib.decompileFunction(f, decomplib.getOptions().getDefaultTimeout(), monitor);
-        //String statusMsg = decomplib.getDecompileMessage();
+		if (hfunction == null)
+		{
+			return false;
+		}
 
-        hfunction = decompRes.getHighFunction();
-        docroot = decompRes.getCCodeMarkup();
+		return true;
+	}
 
-        if (hfunction == null)
-        	return false;
+	/**
+	 * get the pcode ops that refer to an address
+	 */
+	public Iterator<PcodeOpAST> getPcodeOps(Address refAddr)
+	{
+		if (hfunction == null)
+		{
+			return null;
+		}
+		
+		Iterator<PcodeOpAST> piter = hfunction.getPcodeOps(refAddr.getPhysicalAddress());
+		return piter;
+	}
 
-        return true;
-    }
+	/**
+	 * Prints the call at refAddr in the function f
+	 **/
+	public String printCall(Function f, Address refAddr)
+	{
+		log("function = " + f.getName());
+		
+		StringBuffer buff = new StringBuffer();
 
-    /**
-     * get the pcode ops that refer to an address
-     */
-    public Iterator<PcodeOpAST> getPcodeOps(Address refAddr) {
-        if (hfunction == null) {
-            return null;
-        }
-        Iterator<PcodeOpAST> piter = hfunction.getPcodeOps(refAddr.getPhysicalAddress());
-        return piter;
-    }
+		printCall(f, refAddr, docroot, buff, false, false);
 
-    public String printCall(Function f, Address refAddr) {
-        StringBuffer buff = new StringBuffer();
+		return buff.toString();
+	}
 
-        printCall(refAddr, docroot, buff, false, false);
+	private boolean printCall(Function f, Address refAddr, ClangNode node, StringBuffer buff, boolean didStart, boolean isCall) 
+	{
+		if (node == null)
+		{
+			return false;
+		}
+		
+		Address min = node.getMinAddress();
+		Address max = node.getMaxAddress();
+		if (min == null)
+		{
+			return false;
+		}
 
-        return buff.toString();
-    }
+		if (refAddr.getPhysicalAddress().equals(max) && node instanceof ClangStatement)
+		{
+			ClangStatement stmt = (ClangStatement) node;
+			// Don't check for an actual call. The call could be buried more deeply.  As long as the original call reference site
+			// is the max address, then display the results.
+			// So this block assumes that the last address contained in the call will be the
+			// address you are looking for.
+			//    - This could lead to strange behavior if the call reference is placed on some address
+			//    that is not the final call point used by the decompiler.
+			//    - Also if there is a delay slot, then the last address for the call reference point
+			//    might not be the last address for the block of PCode.
+			//if (stmt.getPcodeOp().getOpcode() == PcodeOp.CALL) {
+			if (!didStart) 
+			{
+				Address nodeAddr = node.getMaxAddress();
+				// Decompiler only knows base space.
+				//   If reference came from an overlay space, convert address back
+				if (refAddr.getAddressSpace().isOverlaySpace()) 
+				{
+					nodeAddr = refAddr.getAddressSpace().getOverlayAddress(nodeAddr);
+				}
+				buff.append(" " + nodeAddr + "   : ");
+			}
+				
+				if (!functionCallArgAnalysis(f, refAddr, stmt))
+				{
+					buff.append("   " + toString(stmt));
+				}
+				return true;
+			//}
+		}
+		
+		for (int j = 0; j < node.numChildren(); j++)
+		{
+			isCall = node instanceof ClangStatement;
+			didStart |= printCall(f, refAddr, node.Child(j), buff, didStart, isCall);
+		}
+		
+		return didStart;
+	}
+	
+	/**
+	 * Analyze the args for the ClangStatement function.  Find the
+	 * function name token first, then keep count of ClangVariableToken
+	 * we are on as we iterate though the children.
+	 */
+	public boolean functionCallArgAnalysis(Function f, Address refAddr, ClangStatement node)
+	{
+		int currentArgNumber = 0;
+		boolean foundFunctionNameToken = false;
+		for(int i = 0; i < node.numChildren(); i++)
+		{
+			ClangNode subNode = node.Child(i);
+			
+			if (subNode instanceof ClangFuncNameToken)
+			{
+				// We found the function name, now we start counting the
+				// arguments!
+				foundFunctionNameToken = true;
+			}
+			
+			if (!foundFunctionNameToken)
+			{
+				// Don't count anything before the function name
+				continue;
+			}
+			
+			if (subNode instanceof ClangVariableToken)
+			{
+				if (currentArgNumber < argNumberForTrace)
+				{
+					// Haven't hit the trace arg yet, keep iterating
+					currentArgNumber++;
+					continue;
+				}
+				
+				// If we got this far, this is our trace arg!  Strip off
+				// the leading and trailing quotes if present
+				String funcTraceName = subNode.toString();
+				if (funcTraceName.startsWith("\""))
+				{
+					funcTraceName = funcTraceName.substring(1);
+				}
+				if (funcTraceName.endsWith("\""))
+				{
+					int len = funcTraceName.length() - 1;
+					funcTraceName = funcTraceName.substring(0, len);
+				}
+				
+				log("At " + refAddr + " we found trace statement.  Function " +
+				    f.getName() + " => " + funcTraceName);
+				    
+				if (f.getName().equals(funcTraceName))
+				{
+					log("Function already has the name " + f.getName());
+					return true;
+				}
+				
+				renameData.put(f, funcTraceName);
+				log("Map has " + renameData.size() + " entries");
+				    
+				return true;
+			}
+		}
+		
+		// If we got here, we parsed all the subnodes, but didn't find
+		// enough tokens
+		if (foundFunctionNameToken)
+		{
+			log("We found functionName token, but only " + currentArgNumber +
+			    " args");
+		}
+		else
+		{
+			log("We never even found the functionName token, WTF");
+		}
+		
+		return false;
+	}
 
-    private boolean printCall(Address refAddr, ClangNode node, StringBuffer buff, boolean didStart, boolean isCall) {
-    	if (node == null) {
-    		return false;
-    	}
-    	
-    	Address min = node.getMinAddress();
-        Address max = node.getMaxAddress();
-        if (min == null)
-            return false;
-
-        if (refAddr.getPhysicalAddress().equals(max) && node instanceof ClangStatement) {
-        	ClangStatement stmt = (ClangStatement) node;
-        	// Don't check for an actual call. The call could be buried more deeply.  As long as the original call reference site
-        	// is the max address, then display the results.
-        	// So this block assumes that the last address contained in the call will be the
-        	// address you are looking for.
-        	//    - This could lead to strange behavior if the call reference is placed on some address
-        	//    that is not the final call point used by the decompiler.
-        	//    - Also if there is a delay slot, then the last address for the call reference point
-        	//    might not be the last address for the block of PCode.
-        	//if (stmt.getPcodeOp().getOpcode() == PcodeOp.CALL) {
-	        	if (!didStart) {
-	        		Address nodeAddr = node.getMaxAddress();
-	        		// Decompiler only knows base space.
-	        		//   If reference came from an overlay space, convert address back
-	        	    if (refAddr.getAddressSpace().isOverlaySpace()) {
-	        	        nodeAddr = refAddr.getAddressSpace().getOverlayAddress(nodeAddr);
-	        	    }
-	        		buff.append(" " + nodeAddr + "   : ");
-	        	}
-	        	
-	        	buff.append("   " + toString(stmt));
-	        	return true;
-        	//}
-        }
-        for (int j = 0; j < node.numChildren(); j++) {
-        	isCall = node instanceof ClangStatement;
-            didStart |= printCall(refAddr, node.Child(j), buff, didStart, isCall);
-        }
-        return didStart;
-    }
-
-	public String toString(ClangStatement node) {
-	    StringBuffer buffer = new StringBuffer();
+	public String toString(ClangStatement node)
+	{
+		log("ClangStatementNode [" + node.getPcodeOp().getNumInputs() + 
+		    "] = " + node.getPcodeOp().toString() + ", num children = " +
+		    node.numChildren());
+		
+		StringBuffer buffer = new StringBuffer();
 		int open=-1;
-        for (int j = 0; j < node.numChildren(); j++) {
-	        ClangNode subNode = node.Child(j);
-	        if (subNode instanceof ClangSyntaxToken) {
-	        	ClangSyntaxToken syntaxNode = (ClangSyntaxToken) subNode;
-	        	if (syntaxNode.getOpen() != -1) {
-	        		if (node.Child(j+2) instanceof ClangTypeToken) {
-	        			open = syntaxNode.getOpen();
-		        		continue;
-	        		}
-	        	}
-	        	if (syntaxNode.getClose() == open && open != -1) {
-	        		open = -1;
-	        		continue;
-	        	}
-	        }
-        	if (open != -1) {
-        		continue;
-        	}
-	        buffer.append(subNode.toString());
-	    }
-	    return buffer.toString();
+		for (int j = 0; j < node.numChildren(); j++)
+		{
+			ClangNode subNode = node.Child(j);
+			if (subNode instanceof ClangSyntaxToken)
+			{
+				ClangSyntaxToken syntaxNode = (ClangSyntaxToken) subNode;
+				if (syntaxNode.getOpen() != -1)
+				{
+					if (node.Child(j+2) instanceof ClangTypeToken)
+					{
+						open = syntaxNode.getOpen();
+						continue;
+					}
+				}
+				if (syntaxNode.getClose() == open && open != -1)
+				{
+					open = -1;
+					continue;
+				}
+			}
+			if (open != -1)
+			{
+				continue;
+			}
+			buffer.append(subNode.toString());
+			
+			log("  Node " + j + " (" + subNode.getClass().getName() + 
+			    ") = " + subNode.toString());
+		}
+		return buffer.toString();
 	}
 }
 
