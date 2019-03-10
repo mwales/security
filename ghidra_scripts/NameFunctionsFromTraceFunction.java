@@ -32,6 +32,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import docking.widgets.dialogs.NumberInputDialog;
+import docking.widgets.table.ChooseColumnsDialog;
 
 import ghidra.app.decompiler.*;
 import ghidra.app.script.GhidraScript;
@@ -46,6 +47,7 @@ import ghidra.program.model.pcode.PcodeOpAST;
 import ghidra.program.model.pcode.Varnode;
 import ghidra.program.model.symbol.Reference;
 import ghidra.program.model.symbol.Symbol;
+import ghidra.program.model.symbol.SourceType;
 
 public class NameFunctionsFromTraceFunction extends GhidraScript {
 
@@ -110,6 +112,9 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 	@Override
 	public void run() throws Exception 
 	{
+		
+		
+		
 		renameData = new HashMap<Function,String>();
 
 		if (currentLocation == null) 
@@ -117,6 +122,8 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 			log("No Location.");
 			return;
 		}
+		
+
 
 		PluginTool pluginTool = state.getTool();
 		NumberInputDialog nid = new NumberInputDialog("Argument Number", 0, 0);
@@ -185,6 +192,40 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 		finally 
 		{
 			decomplib.dispose();
+		}
+		
+		String displayList = "Should we rename the following functions?\n\n";
+		int numItemsDisplayed = 0;
+		for(HashMap.Entry<Function,String> it : renameData.entrySet())
+		{
+			displayList += it.getKey().getName();
+			displayList += " => ";
+			displayList += it.getValue();
+			displayList += "\n";
+			
+			numItemsDisplayed++;
+			if (numItemsDisplayed == 30)
+			{
+				displayList += "(plus ";
+				displayList += renameData.size() - 30;
+				displayList += " more) ...";
+				break;
+			}
+		}
+		
+		if (!askYesNo("Rename Functions?", displayList))
+		{
+			// User selected no
+			return;
+		}
+		
+		// Rename all the functions!
+		for(HashMap.Entry<Function,String> it : renameData.entrySet())
+		{
+			log("Renaming " + it.getKey() + " to " + it.getValue());
+			
+			Function f = it.getKey();
+			f.setName(it.getValue(), SourceType.USER_DEFINED);
 		}
 
 		lastAddr = null;
