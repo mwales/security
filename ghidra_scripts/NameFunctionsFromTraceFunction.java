@@ -53,24 +53,15 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 
 	private Address lastAddr = null;
 
-	public class RenameFunctionData 
-	{
-		Address functionAddressToRename;
-		String functionOldName;
-		Address functionNewNameAddress;
-		String functionNewName;
-	}
-
-	Vector<RenameFunctionData> renameDataOld;
+	/**
+	 * Map of the functions to the new name
+	 */
+	private HashMap<Function,String> renameData;
 	
-	HashMap<Function,String> renameData;
-	
-	void addFunctionRenameEntry(Address functionToRename,
-	                            Address functionNewNameAddress)
-	{
-		log("Registering func @ " + functionToRename.toString() + " to "
-		    + functionNewNameAddress.toString());
-	}
+	/**
+	 * Argument number that the trace function uses for function name
+	 */
+	private int argNumberForTrace;
 
 	private String debugToFile = "debug.txt";
 	private BufferedWriter debugLog = null;
@@ -107,26 +98,21 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 
 	}
 	
-	private int argNumberForTrace;
+
 
 	@Override
 	public void run() throws Exception 
 	{
-		
-		
-		
 		renameData = new HashMap<Function,String>();
 
 		if (currentLocation == null) 
 		{
-			log("No Location.");
+			log("No Location.  Run script while in a function");
 			return;
 		}
-		
-
 
 		PluginTool pluginTool = state.getTool();
-		NumberInputDialog nid = new NumberInputDialog("Argument Number", 0, 0);
+		NumberInputDialog nid = new NumberInputDialog("Argument Number of trace call that is function name", 0, 0);
 
 		pluginTool.showDialog(nid);
 
@@ -138,6 +124,7 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 		}
 
 		argNumberForTrace = nid.getValue();
+		
 
 		Listing listing = currentProgram.getListing();
 
@@ -194,7 +181,10 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 			decomplib.dispose();
 		}
 		
-		String displayList = "Should we rename the following functions?\n\n";
+		// Show a user a list of the functions we are going to rename.
+		// We can't show them all the functions, cause the dialog gets
+		// too big, and then you can't click Yes or No
+		String displayList = "Should we rename the following functions?\n \n";
 		int numItemsDisplayed = 0;
 		for(HashMap.Entry<Function,String> it : renameData.entrySet())
 		{
@@ -279,7 +269,7 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 			return;
 		}
 
-		log(printCall(f, refAddr));
+		printCall(f, refAddr);
 	}
 
 	HighFunction hfunction = null;
@@ -297,10 +287,10 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 		hfunction = decompRes.getHighFunction();
 		docroot = decompRes.getCCodeMarkup();
 		
-		for(int i = 0; i < docroot.numChildren(); i++)
-		{
-			log("Child " + i + ": " + docroot.Child(i).toString());
-		}
+		//for(int i = 0; i < docroot.numChildren(); i++)
+		//{
+		//	log("Child " + i + ": " + docroot.Child(i).toString());
+		//}
 
 		if (hfunction == null)
 		{
@@ -310,27 +300,12 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 		return true;
 	}
 
-	/**
-	 * get the pcode ops that refer to an address
-	 */
-	public Iterator<PcodeOpAST> getPcodeOps(Address refAddr)
-	{
-		if (hfunction == null)
-		{
-			return null;
-		}
-		
-		Iterator<PcodeOpAST> piter = hfunction.getPcodeOps(refAddr.getPhysicalAddress());
-		return piter;
-	}
 
 	/**
 	 * Prints the call at refAddr in the function f
 	 **/
 	public String printCall(Function f, Address refAddr)
 	{
-		log("function = " + f.getName());
-		
 		StringBuffer buff = new StringBuffer();
 
 		printCall(f, refAddr, docroot, buff, false, false);
@@ -376,11 +351,11 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 				buff.append(" " + nodeAddr + "   : ");
 			}
 				
-				if (!functionCallArgAnalysis(f, refAddr, stmt))
-				{
-					buff.append("   " + toString(stmt));
-				}
-				return true;
+			if (!functionCallArgAnalysis(f, refAddr, stmt))
+			{
+				buff.append("   " + toString(stmt));
+			}
+			return true;
 			//}
 		}
 		
@@ -451,7 +426,6 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 				}
 				
 				renameData.put(f, funcTraceName);
-				log("Map has " + renameData.size() + " entries");
 				    
 				return true;
 			}
@@ -474,9 +448,9 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 
 	public String toString(ClangStatement node)
 	{
-		log("ClangStatementNode [" + node.getPcodeOp().getNumInputs() + 
-		    "] = " + node.getPcodeOp().toString() + ", num children = " +
-		    node.numChildren());
+		//log("ClangStatementNode [" + node.getPcodeOp().getNumInputs() + 
+		//    "] = " + node.getPcodeOp().toString() + ", num children = " +
+		//    node.numChildren());
 		
 		StringBuffer buffer = new StringBuffer();
 		int open=-1;
@@ -506,8 +480,8 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 			}
 			buffer.append(subNode.toString());
 			
-			log("  Node " + j + " (" + subNode.getClass().getName() + 
-			    ") = " + subNode.toString());
+			//log("  Node " + j + " (" + subNode.getClass().getName() + 
+			//    ") = " + subNode.toString());
 		}
 		return buffer.toString();
 	}
