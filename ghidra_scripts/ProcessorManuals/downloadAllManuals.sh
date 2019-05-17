@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Most of these links compiled from https://github.com/NationalSecurityAgency/ghidra/issues/38
+# This script won't download a manual that you have already downloaded once before
 # Git repo of this script: https://github.com/mwales/security/blob/master/ghidra_scripts/ProcessorManuals/downloadAllManuals.sh
 
 downloadManual () {
