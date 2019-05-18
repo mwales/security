@@ -1,0 +1,14 @@
+; pause instruction during a spell will pause for 1/60th of a second
+
+
+in the south part of the desert something that helps fly
+  SYS_ACCELERATE, SYS_INPUT_X and SYS_INPUT_Y
+
+things u can sense?
+SCAN_ENTITY
+SCAN_PLAYER
+SCAN_SPELL
+SCAN_PROJECTILE
+SCAN_BOSS
+
+

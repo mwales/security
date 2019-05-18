@@ -1,0 +1,6 @@
+mov eax, SYS_FIRE
+mov ebx, 100
+int 0x80
+hlt
+
+

