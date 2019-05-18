@@ -86,8 +86,6 @@ int main(int argc, char** argv)
 
    } while (bytesRead == 1);
 
-   fprintf(stderr, "Done\n");
-
    if (inputFd != 0)
    {
       // Must have been an actual file that was opened

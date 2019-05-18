@@ -22,6 +22,9 @@ ctf, binary utils, debugging, notes
 
 ![Find Floats](utils/FindFloats/FindFloatsScreenshot.png)
 
+* hex2bin: Converts a hex file (or standard input) into binary output (sends
+  the output to stdout, so redirect it into a file if it is a non-ASCII hex.
+
 * ReverseCRC: Tool that will brute force determine all the possible CRC-8
   and CRC-16 seed values for an arbitrary blob of hexadecimal data.
 
