@@ -13,7 +13,7 @@ int main(int argc, char** argv)
    if (argc != 4)
    {
       std::cerr << "Xors 2 files into a 3rd file" << std::endl;
-      std::cerr << "Usage: " << argv[0] << "ct1 ct2 ptsXored" << std::endl;
+      std::cerr << "Usage: " << argv[0] << " ct1 ct2 ptsXored" << std::endl;
       return 1;
    }
 

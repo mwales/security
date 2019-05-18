@@ -27,3 +27,5 @@ ctf, binary utils, debugging, notes
 
 ![Reverse CRC](utils/ReverseCRC/Screenshot.png)
 
+* xorFiles: xor the contents of 2 files into each other
+
