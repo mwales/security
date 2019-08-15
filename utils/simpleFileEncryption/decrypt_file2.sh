@@ -5,7 +5,7 @@ if [ $# != "2" ]; then
   exit 1
 fi
 
-openssl enc -md md5 -d -aes-256-cbc -in $1 -out $2
+openssl enc -md sha512 -d -aes-256-cbc -in $1 -out $2 -pbkdf2 -iter 500000
 
 if [ $? != 0 ]; then
   echo "Error"
