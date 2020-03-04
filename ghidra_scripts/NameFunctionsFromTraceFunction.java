@@ -424,6 +424,12 @@ public class NameFunctionsFromTraceFunction extends GhidraScript {
 					log("Function already has the name " + f.getName());
 					return true;
 				}
+
+				if (!f.getName().startsWith("FUN_"))
+				{
+					log("Function is already named custom name = " + f.getName());
+					return true;
+				}
 				
 				renameData.put(f, funcTraceName);
 				    
