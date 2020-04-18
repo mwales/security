@@ -238,7 +238,11 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QLineEdit" name="theAddressLineEdit"/>
+         <widget class="QLineEdit" name="theAddressLineEdit">
+          <property name="text">
+           <string>0x20000000</string>
+          </property>
+         </widget>
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_10">
@@ -248,7 +252,11 @@
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QLineEdit" name="theNumBytesLineEdit"/>
+         <widget class="QLineEdit" name="theNumBytesLineEdit">
+          <property name="text">
+           <string>0x1000</string>
+          </property>
+         </widget>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_8">
@@ -258,7 +266,11 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QLineEdit" name="thePromptLineEdit"/>
+         <widget class="QLineEdit" name="thePromptLineEdit">
+          <property name="text">
+           <string>&gt;</string>
+          </property>
+         </widget>
         </item>
         <item row="3" column="0">
          <widget class="QLabel" name="label_9">
@@ -268,7 +280,11 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QLineEdit" name="theCommandLineEdit"/>
+         <widget class="QLineEdit" name="theCommandLineEdit">
+          <property name="text">
+           <string>md.b ADDRESS NUMBYTES</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -310,7 +326,7 @@
         <item>
          <widget class="QProgressBar" name="theDumpProgressBar">
           <property name="value">
-           <number>24</number>
+           <number>0</number>
           </property>
          </widget>
         </item>

@@ -24,7 +24,8 @@ public:
 	
 signals:
 	
-	void startDumping(uint64_t address, uint32_t numBytes);
+	void startDumping(uint64_t address, uint32_t numBytes, QString filename,
+	                  QString ubootPrompt, QString dumpCommand);
 	
 	void openSerialPort(QString name, 
 	                    QSerialPort::BaudRate baudRate, 

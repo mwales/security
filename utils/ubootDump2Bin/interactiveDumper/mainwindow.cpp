@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QAbstractSlider>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -149,6 +150,8 @@ void MainWindow::serialButtonPressed()
 
 void MainWindow::dumpButtonPressed()
 {
+	qDebug() << "dumpButtonPressed() called";
+	
 	if (theDumpInProgress)
 	{
 		// Stop dumping
@@ -175,7 +178,7 @@ void MainWindow::dumpButtonPressed()
 			address = addressText.toULongLong(&convSuccess, 10);			
 		}
 		
-		if (!convSuccess)
+		if (!convSuccess || (address % 16) )
 		{
 			QMessageBox::critical(this, "Invalid address", QString("Invalid address: ") + addressText);
 			return;
@@ -200,10 +203,21 @@ void MainWindow::dumpButtonPressed()
 			return;
 		}
 		
+		QString filename = QFileDialog::getSaveFileName(this, "Select Output File");
+		qDebug() << "Dump file is " << filename;
+		if (filename.isEmpty())
+		{
+			// User canceled
+			return;
+		}
+		
+		
 		ui->theDumpButton->setText("Stop Dumping");
 		theDumpInProgress = true;
 		ui->theDumpProgressBar->setValue(0);
-		emit startDumping(address, numBytes);
+		emit startDumping(address, numBytes, filename, 
+		                  ui->thePromptLineEdit->text(),
+		                  ui->theCommandLineEdit->text());
 	}
 }
 
