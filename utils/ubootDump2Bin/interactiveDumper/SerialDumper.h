@@ -16,6 +16,7 @@ enum DumpingState
 	READING_DUMP_DATA,
 	START_DUMP_CRC,
 	READING_DUMP_CRC,
+	STOP_DUMPING,
 	NOT_DUMPING
 };
 
@@ -59,7 +60,9 @@ public slots:
 	
 protected slots:
 	
-	void dataAvailable();	
+	void dataAvailable();
+	
+	void serialError(QSerialPort::SerialPortError err);
 	
 protected:
 	
@@ -67,9 +70,9 @@ protected:
 	
 	bool isHexString(QString s);
 	
-	QByteArray processDumpText(QString dumpData);
-	
 	void processSingleLine(QByteArray data);
+	void processSingleLineDumpData(QString data);
+	void processSingleLineCrcData(QString data);
 	
 	// State machine methods
 	void executeState();
@@ -78,9 +81,14 @@ protected:
 	void executeReadingDumpDataState();
 	void executeStartDumpCrcState();
 	void executeReadingDumpCrcState();
+	void executeStopDumpingState();
 	void executeNotDumpingState();
 	
 	QString currentStateName();
+	
+	QString serialPortErrorToString(QSerialPort::SerialPortError err);
+	
+	bool validateCrcValue();
 	
 	MainWindow* theGui;
 	
@@ -113,6 +121,9 @@ protected:
 	QTimer theBlockTimer;
 	
 	uint32_t theNumTimerFiringsForOneBlock;
+	
+	uint32_t theReceivedCrc;
+	bool theCrcReceived;
 };
 
 #endif // SERIALDUMPER_H

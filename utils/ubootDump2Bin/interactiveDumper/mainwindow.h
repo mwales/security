@@ -46,13 +46,13 @@ public slots:
 	
 	void updateProgress(int currentVal, int maxValue);
 	
+	void dumpFinished();
+	
 protected slots:
 	
 	void serialButtonPressed();
 	
 	void dumpButtonPressed();
-	
-	void dumpingFinished();
 	
 	void portClosed();
 	

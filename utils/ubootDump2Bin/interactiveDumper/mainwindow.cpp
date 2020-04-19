@@ -98,7 +98,11 @@ void MainWindow::updateProgress(int currentVal, int maxValue)
 	ui->theDumpProgressBar->setValue(currentVal);
 }
 
-
+void MainWindow::dumpFinished()
+{
+	theDumpInProgress = false;
+	ui->theDumpButton->setText("Start Dump");
+}
 
 void MainWindow::serialButtonPressed()
 {
@@ -219,13 +223,6 @@ void MainWindow::dumpButtonPressed()
 		                  ui->thePromptLineEdit->text(),
 		                  ui->theCommandLineEdit->text());
 	}
-}
-
-void MainWindow::dumpingFinished()
-{
-	QMessageBox::information(this, "Dump Complete", "Dump complete!");
-	theDumpInProgress = false;
-	ui->theDumpButton->setText("Start Dump");
 }
 
 void MainWindow::portClosed()

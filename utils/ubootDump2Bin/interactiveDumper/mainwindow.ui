@@ -311,6 +311,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QProgressBar" name="theDumpProgressBar">
+          <property name="value">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -322,13 +329,6 @@
            </size>
           </property>
          </spacer>
-        </item>
-        <item>
-         <widget class="QProgressBar" name="theDumpProgressBar">
-          <property name="value">
-           <number>0</number>
-          </property>
-         </widget>
         </item>
        </layout>
       </item>
@@ -387,6 +387,9 @@
    </property>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="windowTitle">
+    <string>U-Boot Dumper</string>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>

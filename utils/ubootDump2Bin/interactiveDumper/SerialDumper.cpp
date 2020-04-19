@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QtDebug>
 #include "mainwindow.h"
+#include "crc32.h"
 
 const int TIMER_FIRE_PERIOD = 2000;
 const int BLOCK_SIZE = 256;
@@ -19,7 +20,9 @@ SerialDumper::SerialDumper(QObject *parent) :
     theOutputFile(this),
     theCurrentState(NOT_DUMPING),
     theBlockTimer(this),
-    theNumTimerFiringsForOneBlock(0)
+    theNumTimerFiringsForOneBlock(0),
+    theReceivedCrc(0),
+    theCrcReceived(false)
 {
 	theBlockTimer.setInterval(TIMER_FIRE_PERIOD);
 	connect(&theBlockTimer, &QTimer::timeout,
@@ -66,6 +69,17 @@ void SerialDumper::initMainWindow(MainWindow* mw)
 		qWarning() << "Connection for stopDump function failed in" << __PRETTY_FUNCTION__;
 	}
 	
+	if (!connect(this, &SerialDumper::updateProgress,
+	             mw, &MainWindow::updateProgress))
+	{
+		qWarning() << "Connection for stopDump function failed in" << __PRETTY_FUNCTION__;
+	}
+	
+	if (!connect(this, &SerialDumper::dumpComplete,
+	             mw, &MainWindow::dumpFinished))
+	{
+		qWarning() << "Connection for stopDump function failed in" << __PRETTY_FUNCTION__;
+	}
 }
 
 QStringList SerialDumper::getSerialPortList()
@@ -149,7 +163,7 @@ void SerialDumper::stopDump()
 		return;
 	}
 	
-	theCurrentState = NOT_DUMPING;
+	theCurrentState = STOP_DUMPING;
 	executeState();
 }
 
@@ -246,6 +260,17 @@ void SerialDumper::dataAvailable()
 	}
 }
 
+void SerialDumper::serialError(QSerialPort::SerialPortError err)
+{
+	qDebug() << "Serial Port Error: " << serialPortErrorToString(err);
+	
+	QMessageBox::critical(theGui, "Serial Port Error",
+	                      QString("Serial Port Error: %1").arg(serialPortErrorToString(err)));
+	
+	theCurrentState = STOP_DUMPING;
+	executeState();
+}
+
 bool SerialDumper::isHexChar(QChar x)
 {
 	if ( (x >= '0') && (x <= '9'))
@@ -273,7 +298,7 @@ bool SerialDumper::isHexString(QString s)
 	return true;
 }
 
-QByteArray SerialDumper::processDumpText(QString dumpData)
+void SerialDumper::processSingleLineDumpData(QString dumpData)
 {
 	dumpData = dumpData.trimmed();
 	
@@ -283,10 +308,11 @@ QByteArray SerialDumper::processDumpText(QString dumpData)
 	qDebug() << "Token List: " << tokens;
 	
 	// There needs to be 18 tokens: address, 16 bytes, ascii
-	if (tokens.length() < 18)
+	// ascii could be all spaces, not a token, so only 17
+	if (tokens.length() < 17)
 	{
 		qDebug() << "  process failed, not enough tokens (" << tokens.length() << ")";
-		return QByteArray();
+		return;
 	}
 	
 	// Make sure the first 17 tokens are the correct length:  address and 16 bytes
@@ -294,7 +320,7 @@ QByteArray SerialDumper::processDumpText(QString dumpData)
 	{
 		qDebug() << "  addresss token the wrong size [" << tokens.at(0) << "], with len="
 		         << tokens.at(0).length();
-		return QByteArray();
+		return;
 	}
 	
 	for(int i = 1; i <= 16; i++)
@@ -304,7 +330,7 @@ QByteArray SerialDumper::processDumpText(QString dumpData)
 			qDebug() << "  process failed, data token " << i << " wrong size";
 			qDebug() << " token [" << tokens.at(i) << "], with len="
 			         << tokens.at(i).length();
-			return QByteArray();
+			return;
 		}
 	}
 	
@@ -314,7 +340,7 @@ QByteArray SerialDumper::processDumpText(QString dumpData)
 		if (!isHexString(tokens.at(i)))
 		{
 			qDebug() << "  process failed, data token text not hex";
-			return QByteArray();
+			return;
 		}
 	}
 	
@@ -343,16 +369,56 @@ QByteArray SerialDumper::processDumpText(QString dumpData)
 	}
 	*/
 	
-	QByteArray retVal;
 	for(int i = 1; i <= 16; i++)
 	{
-		retVal.append( static_cast<char>(temp[i] & 0xff) );
+		theCurrentDumpBlock.append( static_cast<char>(temp[i] & 0xff) );
 	}
 	
-	//theCurrentDumpAddress += 0x10;
+	qDebug() << "  Added 0x10 bytes of data to current block";
+}
+
+/**
+ * Format of CRC reply
+ * CRC32 for 20000000 ... 20000fff ==> aabbccdd
+ */
+void SerialDumper::processSingleLineCrcData(QString data)
+{
+	qDebug() << "CRC Data Rx =" << data;
 	
+	data = data.trimmed();
 	
-	return retVal;
+	qDebug() << __PRETTY_FUNCTION__ << " called with: " << data;
+	
+	QStringList tokens = data.split(QRegExp("[: \\.=>]+"));
+	qDebug() << "Token List: " << tokens;
+	
+	// Tokens should be "CRC32", "for", startAddr, endAddr, crc32Val
+	
+	// Validate the number of tokens
+	if (tokens.size() != 5)
+	{
+		qDebug() << "Invalid number of tokens, expected 5:" << tokens;
+		return;
+	}
+	
+	// Validate the first two tokens
+	if ( (tokens[0] != "CRC32") || (tokens[1] != "for") )
+	{
+		qDebug() << "One of the first 2 tokens invalid:" << tokens[0] << "or" << tokens[1];
+		return;
+	}
+	
+	bool success = false;
+	uint32_t crcVal = tokens[4].toUInt(&success, 16);
+	
+	if (!success)
+	{
+		qDebug() << "CRC token didn't convert to hex:" << tokens[4];
+		return;
+	}
+	
+	theReceivedCrc = crcVal;
+	theCrcReceived = true;
 }
 
 void SerialDumper::processSingleLine(QByteArray data)
@@ -382,7 +448,18 @@ void SerialDumper::processSingleLine(QByteArray data)
 		return;
 	}
 	
-	theCurrentDumpBlock.append(processDumpText(QString(data)));
+	if (theCurrentState == READING_DUMP_DATA)
+	{
+		processSingleLineDumpData(QString(data));
+	}
+	else if (theCurrentState == READING_DUMP_CRC)
+	{
+		processSingleLineCrcData(QString(data));
+	}
+	else
+	{
+		qDebug() << "  Not processing serial data in state" << currentStateName();
+	}
 }
 
 void SerialDumper::executeState()
@@ -409,6 +486,10 @@ void SerialDumper::executeState()
 		
 	case READING_DUMP_CRC:
 		executeReadingDumpCrcState();
+		return;
+		
+	case STOP_DUMPING:
+		executeStopDumpingState();
 		return;
 		
 	case NOT_DUMPING:
@@ -472,18 +553,105 @@ void SerialDumper::executeStartDumpBlockState()
 
 void SerialDumper::executeReadingDumpDataState()
 {
-	
+	if (theCurrentDumpBlock.size() == BLOCK_SIZE)
+	{
+		// We received the full block!  Now verify the data!
+		theCurrentState = START_DUMP_CRC;
+		executeState();
+	}
+	else
+	{
+		qDebug() << "Have " << theCurrentDumpBlock.size() << "bytes of data of block size"
+		         << BLOCK_SIZE;
+	}
 }
 
 void SerialDumper::executeStartDumpCrcState()
 {
 	// Reset the timeout firing count to 0
 	theNumTimerFiringsForOneBlock = 0;
+	
+	QString addressString = QString("0x") + QString::number(theCurrentDumpAddress, 16);
+	QString numBytesString = QString("0x") + QString::number(theCurrentBlockSize, 16);
+	
+	// Format for crc32 command
+	// crc32 0xaabbccdd 0xaabb
+	// crc32 address length
+	QString crcCommand = "crc32 ADDRESS NUMBYTES";
+	crcCommand.replace("ADDRESS", addressString);
+	crcCommand.replace("NUMBYTES", numBytesString);
+	crcCommand.append("\n");
+	
+	theSerialPort->write(crcCommand.toLatin1());
+	emit serialTextReceived(crcCommand);
+	
+	theCurrentState = READING_DUMP_CRC;
+	theReceivedCrc = 0;
+	theCrcReceived = false;
 }
 
 void SerialDumper::executeReadingDumpCrcState()
 {
+	if (theCrcReceived)
+	{
+		if (validateCrcValue())
+		{
+			// CRC checks out, move to next block
+			theOutputFile.write(theCurrentDumpBlock);
+			theCurrentDumpAddress += theCurrentDumpBlock.size();
+			theCurrentNumBytes += theCurrentDumpBlock.size();
+			
+			emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
+			
+			theCurrentDumpBlock.clear();
+			
+			if (theCurrentNumBytes >= theFinalDumpSize)
+			{
+				// We are done dumping!
+				
+				QMessageBox::information(theGui, "Dump Complete",
+				                         QString("Dumped 0x%1 bytes successfully!").arg(QString::number(theCurrentNumBytes, 16)));
+				
+				theCurrentState = STOP_DUMPING;
+			}
+			else
+			{
+				// Goto next block for dumping
+				theCurrentState = START_DUMP_BLOCK;
+			}
+			
+			executeState();
+		}
+		else
+		{
+			// Redump this block
+			theReceivedCrc = 0;
+			theCrcReceived = false;
+			theCurrentState = START_DUMP_BLOCK;
+			executeState();
+		}
+	}
+}
+
+void SerialDumper::executeStopDumpingState()
+{
+	// If there is a partial block of data, just write it to file anyways
+	if (!theCurrentDumpBlock.isEmpty())
+	{
+		theOutputFile.write(theCurrentDumpBlock);
+		theCurrentDumpAddress += theCurrentDumpBlock.size();
+		theCurrentNumBytes += theCurrentDumpBlock.size();
+		theCurrentDumpBlock.clear();
+	}
 	
+	// One last progress update
+	emit updateProgress(theCurrentNumBytes, theFinalDumpSize);	
+	emit dumpComplete();
+		
+	qDebug() << "Closing the dump file";
+	theOutputFile.close();
+	
+	theCurrentState = NOT_DUMPING;
 }
 
 void SerialDumper::executeNotDumpingState()
@@ -515,9 +683,69 @@ QString SerialDumper::currentStateName()
 	case READING_DUMP_CRC:
 		return "READING_DUMP_CRC";
 		
+	case STOP_DUMPING:
+		return "STOP_DUMPING";
+		
 	case NOT_DUMPING:
 		return "NOT_DUMPING";
 	}
 	
 	return "INVALID_STATE";
+}
+
+QString SerialDumper::serialPortErrorToString(QSerialPort::SerialPortError err)
+{
+	switch(err)
+	{
+	case QSerialPort::NoError:
+		return "No Error";
+	case QSerialPort::DeviceNotFoundError:
+		return "DeviceNotFoundError";
+	case QSerialPort::PermissionError:
+		return "Permission Error";
+	case QSerialPort::OpenError:
+		return "OpenError";
+	case QSerialPort::NotOpenError:
+		return "Not Open Error";
+	case QSerialPort::ParityError:
+		return "Parity Error";
+	case QSerialPort::FramingError:
+		return "Framing Error";
+	case QSerialPort::BreakConditionError:
+		return "Break Condition Error";
+	case QSerialPort::WriteError:
+		return "Write Error";
+	case QSerialPort::ReadError:
+		return "Read Error";
+	case QSerialPort::ResourceError:
+		return "Resource Error";
+	case QSerialPort::UnsupportedOperationError:
+		return "Unsupported Operation Error";
+	case QSerialPort::TimeoutError:
+		return "Timeout Error";
+	case QSerialPort::UnknownError:
+		return "Unknown Error";		
+	}
+	
+	return "Unnkown Error Code";
+}
+
+bool SerialDumper::validateCrcValue()
+{
+	qDebug() << "validate CRC " << QString::number(theReceivedCrc, 16);
+	
+	uint32_t ourChecksum = crc32buf(theCurrentDumpBlock.data(), theCurrentDumpBlock.size());
+	
+	qDebug() << "calculated CRC " << QString::number(ourChecksum, 16);
+	
+	if (theReceivedCrc == ourChecksum)
+	{
+		qDebug() << "Checksums match!";
+	}
+	else
+	{
+		qDebug() << "Checksums differ!";	            
+	}
+	
+	return theReceivedCrc == ourChecksum;
 }

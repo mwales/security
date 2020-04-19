@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    SerialDumper.cpp
+    SerialDumper.cpp \
+    crc32.cpp
 
 HEADERS += \
         mainwindow.h \
-    SerialDumper.h
+    SerialDumper.h \
+    crc32.h
 
 FORMS += \
         mainwindow.ui
