@@ -42,3 +42,9 @@ Various writeups
 
 * xorFiles : xor the contents of 2 files into each other
 
+![UBootDumper](utils/ubootDump2Bin/interactiveDumper/screenshot.png)
+
+* Can dump flash from a U-Boot serial terminal.  Takes advantage of U-Boot
+  CRC command to validate the data as it is downloaded to eliminate bit
+  errors in transfer.
+

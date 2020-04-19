@@ -96,6 +96,58 @@ void MainWindow::updateProgress(int currentVal, int maxValue)
 	}
 	
 	ui->theDumpProgressBar->setValue(currentVal);
+	
+	// qDebug() << "Timer Val:" << theDumpTimer.elapsed();
+	
+	if (theDumpTimer.elapsed() < 5000)
+	{
+		ui->theDumpSpeedLabel->setText("Calculating dump speed...");
+	}
+	else
+	{
+		int elapsedMs = theDumpTimer.elapsed();
+		double dumpSpeed = currentVal * 1024.0 / elapsedMs;
+		
+		QString dumpSpeedString = QString("%1 bytes/sec").arg(dumpSpeed);
+		if (dumpSpeed > 1000.0)
+		{
+			dumpSpeedString = QString("%1 KB/sec").arg(dumpSpeed / 1000.0);
+		}
+		
+		// Had dump complete?
+		QString progressString;
+		int bytesLeftToDump = maxValue - currentVal;
+		
+		if (bytesLeftToDump == 0)
+		{
+			progressString = "Dump complete";
+		}
+		else
+		{
+			double secsLeftForDumpDouble = static_cast<double>(bytesLeftToDump) / dumpSpeed;
+			int secsLeft = static_cast<int>(secsLeftForDumpDouble);
+			
+			if (secsLeft < 60)
+			{
+				progressString = QString("Time Left: %1 seconds left").arg(secsLeft);
+			}
+			else
+			{
+				int minLeft = secsLeft / 60;
+				secsLeft = secsLeft % 60;
+				progressString = QString("Time Left: %1:%2 left").arg(minLeft).arg(secsLeft);
+				
+				if (minLeft > 60)
+				{
+					int hourLeft = minLeft / 60;
+					minLeft = minLeft % 60;
+					progressString = QString("Time Left: %1:%2:%3 left").arg(hourLeft).arg(minLeft).arg(secsLeft);
+				}
+			}
+		}
+		
+		ui->theDumpSpeedLabel->setText(dumpSpeedString + "\n" + progressString);
+	}
 }
 
 void MainWindow::dumpFinished()
@@ -220,8 +272,10 @@ void MainWindow::dumpButtonPressed()
 		theDumpInProgress = true;
 		ui->theDumpProgressBar->setValue(0);
 		emit startDumping(address, numBytes, filename, 
-		                  ui->thePromptLineEdit->text(),
+		                  ui->theCrcLineEdit->text(),
 		                  ui->theCommandLineEdit->text());
+		
+		theDumpTimer.start();
 	}
 }
 

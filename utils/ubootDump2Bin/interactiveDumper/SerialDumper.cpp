@@ -96,7 +96,7 @@ QStringList SerialDumper::getSerialPortList()
 }
 
 void SerialDumper::startDump(uint64_t address, uint32_t numBytes, QString filename,
-                             QString prompt, QString command)
+                             QString crcCmd, QString command)
 {
 	if (theCurrentState != NOT_DUMPING)
 	{
@@ -109,7 +109,7 @@ void SerialDumper::startDump(uint64_t address, uint32_t numBytes, QString filena
 	theFinalDumpSize = numBytes;
 	theCurrentNumBytes = 0;
 	theDumpFilename = filename;
-	thePrompt = prompt;
+	theCrcCommand = crcCmd;
 	theDumpCommand = command;
 	
 	theCurrentState = START_DUMP;
@@ -164,6 +164,7 @@ void SerialDumper::stopDump()
 	}
 	
 	theCurrentState = STOP_DUMPING;
+	theDumpFinishMsg = "Dump stopped early due to user input";
 	executeState();
 }
 
@@ -264,10 +265,8 @@ void SerialDumper::serialError(QSerialPort::SerialPortError err)
 {
 	qDebug() << "Serial Port Error: " << serialPortErrorToString(err);
 	
-	QMessageBox::critical(theGui, "Serial Port Error",
-	                      QString("Serial Port Error: %1").arg(serialPortErrorToString(err)));
-	
 	theCurrentState = STOP_DUMPING;
+	theDumpFinishMsg = "Dump stopped due to serial error: " + serialPortErrorToString(err);
 	executeState();
 }
 
@@ -302,24 +301,22 @@ void SerialDumper::processSingleLineDumpData(QString dumpData)
 {
 	dumpData = dumpData.trimmed();
 	
-	qDebug() << __PRETTY_FUNCTION__ << " called with: " << dumpData;
-	
 	QStringList tokens = dumpData.split(QRegExp("[: ]+"));
-	qDebug() << "Token List: " << tokens;
+	// qDebug() << "Token List: " << tokens;
 	
 	// There needs to be 18 tokens: address, 16 bytes, ascii
 	// ascii could be all spaces, not a token, so only 17
 	if (tokens.length() < 17)
 	{
-		qDebug() << "  process failed, not enough tokens (" << tokens.length() << ")";
+		// qDebug() << "  process failed, not enough tokens (" << tokens.length() << ")";
 		return;
 	}
 	
 	// Make sure the first 17 tokens are the correct length:  address and 16 bytes
 	if (tokens.at(0).length() != 8)
 	{
-		qDebug() << "  addresss token the wrong size [" << tokens.at(0) << "], with len="
-		         << tokens.at(0).length();
+		// qDebug() << "  addresss token the wrong size [" << tokens.at(0) << "], with len="
+		//          << tokens.at(0).length();
 		return;
 	}
 	
@@ -327,9 +324,9 @@ void SerialDumper::processSingleLineDumpData(QString dumpData)
 	{
 		if (tokens.at(i).length() != 2)
 		{
-			qDebug() << "  process failed, data token " << i << " wrong size";
-			qDebug() << " token [" << tokens.at(i) << "], with len="
-			         << tokens.at(i).length();
+			// qDebug() << "  process failed, data token " << i << " wrong size";
+			// qDebug() << " token [" << tokens.at(i) << "], with len="
+			//          << tokens.at(i).length();
 			return;
 		}
 	}
@@ -339,7 +336,7 @@ void SerialDumper::processSingleLineDumpData(QString dumpData)
 	{
 		if (!isHexString(tokens.at(i)))
 		{
-			qDebug() << "  process failed, data token text not hex";
+			// qDebug() << "  process failed, data token text not hex";
 			return;
 		}
 	}
@@ -350,31 +347,12 @@ void SerialDumper::processSingleLineDumpData(QString dumpData)
 		temp[i] = tokens.at(i).toULong(nullptr, 16);
 	}
 	
-	/*
-	uint64_t addressOfText = 0xffffffff & temp[0];
-	
-	if ( (addressOfText != theCurrentDumpAddress) &&
-	     ( (addressOfText - theCurrentDumpAddress < 0x80)) )
-	{
-		qDebug() << "Looking for address " << QString::number(theCurrentDumpAddress,16) 
-		         << " but we found address " << QString::number(addressOfText,16) 
-		         << " instead";
-	}
-	
-	if (addressOfText != theCurrentDumpAddress)
-	{
-		qDebug() << "  process failed, wrong address: " << QString::number(addressOfText,16) 
-		       << "!=" << QString::number(theCurrentDumpAddress,16);
-		return QByteArray();
-	}
-	*/
-	
 	for(int i = 1; i <= 16; i++)
 	{
 		theCurrentDumpBlock.append( static_cast<char>(temp[i] & 0xff) );
 	}
 	
-	qDebug() << "  Added 0x10 bytes of data to current block";
+	// qDebug() << "  Added 0x10 bytes of data to current block";
 }
 
 /**
@@ -383,14 +361,12 @@ void SerialDumper::processSingleLineDumpData(QString dumpData)
  */
 void SerialDumper::processSingleLineCrcData(QString data)
 {
-	qDebug() << "CRC Data Rx =" << data;
-	
 	data = data.trimmed();
 	
 	qDebug() << __PRETTY_FUNCTION__ << " called with: " << data;
 	
 	QStringList tokens = data.split(QRegExp("[: \\.=>]+"));
-	qDebug() << "Token List: " << tokens;
+	// qDebug() << "Token List: " << tokens;
 	
 	// Tokens should be "CRC32", "for", startAddr, endAddr, crc32Val
 	
@@ -577,7 +553,7 @@ void SerialDumper::executeStartDumpCrcState()
 	// Format for crc32 command
 	// crc32 0xaabbccdd 0xaabb
 	// crc32 address length
-	QString crcCommand = "crc32 ADDRESS NUMBYTES";
+	QString crcCommand = theCrcCommand;
 	crcCommand.replace("ADDRESS", addressString);
 	crcCommand.replace("NUMBYTES", numBytesString);
 	crcCommand.append("\n");
@@ -609,9 +585,9 @@ void SerialDumper::executeReadingDumpCrcState()
 			{
 				// We are done dumping!
 				
-				QMessageBox::information(theGui, "Dump Complete",
-				                         QString("Dumped 0x%1 bytes successfully!").arg(QString::number(theCurrentNumBytes, 16)));
+				emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
 				
+				theDumpFinishMsg = QString("Dumped 0x%1 bytes successfully!").arg(QString::number(theCurrentNumBytes, 16));
 				theCurrentState = STOP_DUMPING;
 			}
 			else
@@ -645,7 +621,7 @@ void SerialDumper::executeStopDumpingState()
 	}
 	
 	// One last progress update
-	emit updateProgress(theCurrentNumBytes, theFinalDumpSize);	
+	emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
 	emit dumpComplete();
 		
 	qDebug() << "Closing the dump file";
@@ -732,20 +708,11 @@ QString SerialDumper::serialPortErrorToString(QSerialPort::SerialPortError err)
 
 bool SerialDumper::validateCrcValue()
 {
-	qDebug() << "validate CRC " << QString::number(theReceivedCrc, 16);
+	// qDebug() << "validate CRC " << QString::number(theReceivedCrc, 16);
 	
 	uint32_t ourChecksum = crc32buf(theCurrentDumpBlock.data(), theCurrentDumpBlock.size());
 	
-	qDebug() << "calculated CRC " << QString::number(ourChecksum, 16);
-	
-	if (theReceivedCrc == ourChecksum)
-	{
-		qDebug() << "Checksums match!";
-	}
-	else
-	{
-		qDebug() << "Checksums differ!";	            
-	}
+	// qDebug() << "calculated CRC " << QString::number(ourChecksum, 16);
 	
 	return theReceivedCrc == ourChecksum;
 }

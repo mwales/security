@@ -7,6 +7,7 @@
 #include <QMap>
 #include <stdint.h>
 #include <QSerialPort>
+#include <QTime>
 
 namespace Ui {
 class MainWindow;
@@ -25,7 +26,7 @@ public:
 signals:
 	
 	void startDumping(uint64_t address, uint32_t numBytes, QString filename,
-	                  QString ubootPrompt, QString dumpCommand);
+	                  QString crcCmd, QString dumpCommand);
 	
 	void openSerialPort(QString name, 
 	                    QSerialPort::BaudRate baudRate, 
@@ -74,6 +75,8 @@ protected:
 	QMap<QString, QSerialPort::FlowControl> theFlowControlMap;
 	QMap<QString, QSerialPort::StopBits> theStopBitsMap;
 	QMap<QString, QSerialPort::Parity> theParityMap;
+	
+	QTime theDumpTimer;
 };
 
 #endif // MAINWINDOW_H

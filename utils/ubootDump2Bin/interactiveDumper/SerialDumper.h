@@ -41,7 +41,7 @@ signals:
 public slots:
 	
 	void startDump(uint64_t address, uint32_t numBytes, QString filename,
-	               QString ubootPrompt, QString dumpCommand);
+	               QString crcCmd, QString dumpCommand);
 	
 	void openSerialPort(QString name, 
 	                    QSerialPort::BaudRate baudRate, 
@@ -114,7 +114,7 @@ protected:
 	
 	QString theDumpFilename;
 	
-	QString thePrompt;
+	QString theCrcCommand;
 	
 	QString theDumpCommand;
 	
@@ -124,6 +124,8 @@ protected:
 	
 	uint32_t theReceivedCrc;
 	bool theCrcReceived;
+	
+	QString theDumpFinishMsg;
 };
 
 #endif // SERIALDUMPER_H
