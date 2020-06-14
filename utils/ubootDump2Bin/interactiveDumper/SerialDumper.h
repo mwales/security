@@ -34,7 +34,7 @@ signals:
 	
 	void updateProgress(int curProgress, int finalProgress);
 	
-	void dumpComplete();
+	void dumpComplete(QString msg);
 	
 	void serialTextReceived(QString text);
 	

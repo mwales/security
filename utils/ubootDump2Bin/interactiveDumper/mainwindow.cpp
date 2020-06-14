@@ -150,10 +150,11 @@ void MainWindow::updateProgress(int currentVal, int maxValue)
 	}
 }
 
-void MainWindow::dumpFinished()
+void MainWindow::dumpFinished(QString completeMsg)
 {
 	theDumpInProgress = false;
 	ui->theDumpButton->setText("Start Dump");
+   ui->theDumpSpeedLabel->setText(completeMsg);
 }
 
 void MainWindow::serialButtonPressed()

@@ -47,7 +47,7 @@ public slots:
 	
 	void updateProgress(int currentVal, int maxValue);
 	
-	void dumpFinished();
+	void dumpFinished(QString completeMsg);
 	
 protected slots:
 	

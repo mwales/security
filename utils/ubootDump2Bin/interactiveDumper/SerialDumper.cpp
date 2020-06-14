@@ -622,7 +622,7 @@ void SerialDumper::executeStopDumpingState()
 	
 	// One last progress update
 	emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
-	emit dumpComplete();
+	emit dumpComplete(theDumpFinishMsg);
 		
 	qDebug() << "Closing the dump file";
 	theOutputFile.close();
