@@ -170,7 +170,7 @@ void SerialDumper::stopDump()
 
 void SerialDumper::sendSerialData(QString data)
 {
-	if (data.back() != '\n')
+	if (data.at(data.size() - 1) != '\n')
 	{
 		data.append('\n');
 	}
@@ -229,7 +229,7 @@ void SerialDumper::dataAvailable()
 	if(theSerialPort->isReadable())
 	{
 		QByteArray text = theSerialPort->readAll();
-		bool endWithNewLine = text.back() == '\n';
+		bool endWithNewLine = text.at(text.size() - 1) == '\n';
 		
 		// qDebug() << "Serial port Rx-ed" << text.length() << "bytes of data";
 		
@@ -406,7 +406,7 @@ void SerialDumper::processSingleLine(QByteArray data)
 		data = theOldData.append(data);
 	}
 	
-	if (data.back() == '\n')
+	if (data.at(data.size() - 1) == '\n')
 	{
 		// qDebug() << "Full line: " << QString(data);
 		
