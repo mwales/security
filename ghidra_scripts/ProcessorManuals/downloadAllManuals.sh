@@ -99,3 +99,5 @@ downloadManual http://kib.kiev.ua/x86docs/SDMs/253667-029.pdf Ghidra/Processors/
 # .idx doesn't align: wget "https://www.zilog.com/force_download.php?filepath=YUhSMGNEb3ZMM2QzZHk1NmFXeHZaeTVqYjIwdlpHOWpjeTk2TVRnd0wzVnRNREExTUM1d1pHWT0=" -O Ghidra/Processors/Z80/data/manuals/um0050.pdf
 downloadManual "https://www.zilog.com/force_download.php?filepath=YUhSMGNEb3ZMM2QzZHk1NmFXeHZaeTVqYjIwdlpHOWpjeTk2T0RBdlZVMHdNRGd3TG5Ca1pnPT0=" Ghidra/Processors/Z80/data/manuals/UM0080.pdf
 
+# SH-4
+downloadManual "https://www.renesas.com/us/en/doc/products/mpumcu/001/rej09b0318_sh_4sm.pdf" Ghidra/Processors/SuperH4/data/manuals/rej09b0318_sh_4sm.pdf
