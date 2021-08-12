@@ -65,6 +65,8 @@ protected slots:
 	void serialError(QSerialPort::SerialPortError err);
 	
 protected:
+
+	void finishedDumpingBlock();
 	
 	bool isHexChar(QChar x);
 	

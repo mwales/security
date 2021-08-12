@@ -98,6 +98,10 @@ QStringList SerialDumper::getSerialPortList()
 void SerialDumper::startDump(uint64_t address, uint32_t numBytes, QString filename,
                              QString crcCmd, QString command)
 {
+	qDebug() << "startDump(0x" << QString::number(address, 16) << ", numBytes=0x"
+	         << QString::number(numBytes, 16) << ", filename=" << filename
+		 << ", crcCmd=" << crcCmd << ", cmd=" << command << ")";
+
 	if (theCurrentState != NOT_DUMPING)
 	{
 		QMessageBox::critical(theGui, "Invalid state to start dump",
@@ -507,7 +511,11 @@ void SerialDumper::executeStartDumpBlockState()
 	
 	// Prepare the command
 	theCurrentBlockSize = BLOCK_SIZE;
-	uint64_t numBytesLeftInDump = theCurrentDumpAddress - theCurrentNumBytes;
+	uint64_t numBytesLeftInDump = theFinalDumpSize - theCurrentNumBytes;
+
+	qDebug() << "StartDumpBlockState.  numBytesLeft = " << numBytesLeftInDump << ", curBlkSize = "
+	         << theCurrentBlockSize;
+
 	if ( numBytesLeftInDump < BLOCK_SIZE)
 	{
 		theCurrentBlockSize = numBytesLeftInDump;
@@ -542,8 +550,43 @@ void SerialDumper::executeReadingDumpDataState()
 	}
 }
 
+void SerialDumper::finishedDumpingBlock()
+{
+	theOutputFile.write(theCurrentDumpBlock);
+	theCurrentDumpAddress += theCurrentDumpBlock.size();
+	theCurrentNumBytes += theCurrentDumpBlock.size();
+			
+	emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
+		
+	theCurrentDumpBlock.clear();
+
+	if (theCurrentNumBytes >= theFinalDumpSize)
+	{
+		// We are done dumping!
+				
+		emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
+				
+		theDumpFinishMsg = QString("Dumped 0x%1 bytes successfully!").arg(QString::number(theCurrentNumBytes, 16));
+		theCurrentState = STOP_DUMPING;
+	}
+	else
+	{
+		// Goto next block for dumping
+		theCurrentState = START_DUMP_BLOCK;
+	}
+			
+	executeState();
+}
+
 void SerialDumper::executeStartDumpCrcState()
 {
+	// If CRC field is empty, skip CRC checking (may not be installed)
+	if (theCrcCommand.isEmpty())
+	{
+		finishedDumpingBlock();
+		return;
+	}
+
 	// Reset the timeout firing count to 0
 	theNumTimerFiringsForOneBlock = 0;
 	
@@ -573,31 +616,8 @@ void SerialDumper::executeReadingDumpCrcState()
 		if (validateCrcValue())
 		{
 			// CRC checks out, move to next block
-			theOutputFile.write(theCurrentDumpBlock);
-			theCurrentDumpAddress += theCurrentDumpBlock.size();
-			theCurrentNumBytes += theCurrentDumpBlock.size();
-			
-			emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
-			
-			theCurrentDumpBlock.clear();
-			
-			if (theCurrentNumBytes >= theFinalDumpSize)
-			{
-				// We are done dumping!
-				
-				emit updateProgress(theCurrentNumBytes, theFinalDumpSize);
-				
-				theDumpFinishMsg = QString("Dumped 0x%1 bytes successfully!").arg(QString::number(theCurrentNumBytes, 16));
-				theCurrentState = STOP_DUMPING;
-			}
-			else
-			{
-				// Goto next block for dumping
-				theCurrentState = START_DUMP_BLOCK;
-			}
-			
-			executeState();
-		}
+			finishedDumpingBlock();
+	}
 		else
 		{
 			// Redump this block
