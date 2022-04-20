@@ -1,6 +1,19 @@
 # CTF Notes
 
+## Github projects to have checked out already
+
+- https://github.com/JonathanSalwan/ROPgadget
+- https://github.com/openwall/john
+
 ## Applications for CTF VM
+
+### pwntools
+
+```
+python3 -m pip install --upgraded pip
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade pwntools
+```
 
 ### Bare minimum dev tools
 
@@ -47,4 +60,11 @@
 ### Other
 
 - silversearcher-ag
+
+# Docker configuration crap
+
+```
+sudo usermod -aG docker ${USER}
+```
+
 
