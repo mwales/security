@@ -228,3 +228,18 @@ sudo apt-get install libc6-i686:i386 libexpat1:i386 libffi6:i386 libfontconfig1:
 
 sudo apt-get install libgtk2.0-0:i386 gtk2-engines-murrine:i386 gtk2-engines-pixbuf:i386 libpango1.0-0:i386
 </code>
+
+# Core Files
+
+```
+ulimit -c unlimited
+```
+
+Is usually all that is needed, but occasionally this will help if the core isn't going where it should...
+
+```
+sudo sysctl -w kernel.core_pattern=core
+```
+
+And if you just want core dump of running application, check out gcore
+
