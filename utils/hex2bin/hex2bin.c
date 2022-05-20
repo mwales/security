@@ -22,13 +22,64 @@ int isValidChar(char x)
    return 0;
 }
 
+void bin2hex(int inputFd)
+{
+   fprintf(stderr, "bin2hex mode, woot\n");
+
+   int bytesRead = 1;
+   char buf;
+   int value = 0;
+   int curOnesPos = 8;
+   while(bytesRead)
+   {
+      bytesRead = read(inputFd, &buf, 1);
+      if (bytesRead == 1)
+      {
+
+         fprintf(stderr, "Read a byte: %c\n", buf);
+
+         if ( (buf == '1') || (buf == '0') )
+         {
+
+            if (buf == '1')
+            {
+                value |= curOnesPos;
+            }
+
+            curOnesPos >>= 1;
+
+            fprintf(stderr, "Value = %d and curOnesPos = %d\n", value, curOnesPos);
+         }
+
+         if (curOnesPos == 0)
+         {
+            curOnesPos = 8;
+
+            if (value <= 9)
+            {
+               printf("%d", value);
+            }
+            else
+            {
+               printf("%c", value - 10 + 'a');
+            }
+
+            value = 0;
+
+         }
+      }
+   }
+
+   printf("\n");
+}
+
 int main(int argc, char** argv)
 {
    if (argc != 2)
    {
       // Print usage
-      fprintf(stderr, "Usage: %s file_of_hex.txt\n", argv[0]);
-      fprintf(stderr, "Usage: %s -       # Reads hex from stdin\n", argv[0]);
+      fprintf(stderr, "Usage: %s file_of_numbers.txt\n", argv[0]);
+      fprintf(stderr, "Usage: %s -       # Reads numbers from stdin\n", argv[0]);
       return 0;
    }
 
@@ -50,6 +101,13 @@ int main(int argc, char** argv)
       }
 
       fprintf(stderr, "File opened successfully\n");
+   }
+   
+
+   if (strstr(argv[0], "bin2hex"))
+   {
+      bin2hex(inputFd);
+      return 0;
    }
 
    int bytesRead;
