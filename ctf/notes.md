@@ -63,8 +63,35 @@ python3 -m pip install --upgrade pwntools
 
 # Docker configuration crap
 
+You probably need to run this after installing the docker package to get the
+docker user setup correctly. (Restart shell afterwards)
+
 ```
 sudo usermod -aG docker ${USER}
 ```
 
+Docker commands to create and manage an instance of typical CTF challenge
+
+```
+# This will build image based on Dockerfile in current directory
+docker build --tag con_chal .
+
+# Verify
+docker images
+
+# Run the image
+docker run con_chal
+
+# See if it is running?
+docker ps
+docker ps -a
+
+# Run again
+docker start crazyname
+docker stop crazyname
+docker rm crazyname
+
+# Map a port from VM to our network
+docker run -p 8080:80 --name instance_name -d con_chal
+```
 
