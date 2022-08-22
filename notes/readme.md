@@ -140,6 +140,10 @@ Units:
 * info args = list function arg values
 * info locals = list local variables and values
 
+### Setting memory location
+
+set *((int *) 0xdeadbeef) = 0xf00dd00d
+
 ### Scripting a break point
 
 break someFunc
