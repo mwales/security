@@ -249,7 +249,7 @@ address.  I guess RAM, and use the CPU manual to confirm.  Section 2.2 has the
 address map of the SoC.
 
 | Purpose          | Start Address |
-------------------------------------
+| ---------------- | ------------- |
 | ROM              | 0x00000000    |
 | XIP              | 0x10000000    |
 | SRAM             | 0x20000000    |

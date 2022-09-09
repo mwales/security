@@ -27,11 +27,16 @@ python3 -m pip install --upgrade pwntools
 
 ### Reversing Tools
 
+- Ghidra (free from NSA)
+- BinaryNinja (has a free web version)
+- IDA Pro (costs money, decompilers cost even more)
 - binutils-multiarch
 - binwalk
 - ghex
 - jd-gui
 - kpartx
+
+Debian / Ubuntu have a forensics-all meta-package that has a large collection of tools.
 
 ### Debugging
 
@@ -50,12 +55,20 @@ python3 -m pip install --upgrade pwntools
 - picocom
 - putty
 - socat
+- curl
 
 ### Media
 
 - imagemagick
 - pdftk
 - steghide
+
+### Java Reversing
+
+- openjdk-17-jdk
+- Dex2Jar
+- JD-GUI
+- Enigma
 
 ### Other
 
