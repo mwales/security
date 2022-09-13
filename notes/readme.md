@@ -1,4 +1,4 @@
-### Linux syscall tables
+# Linux syscall tables
 
 HaoE says they are normally (used to be) in /usr/include/asm-i386/unistd.h
 
@@ -7,40 +7,45 @@ On Ubuntu 14.04 systems, they are in:
 /usr/include/x86_64-linux-gnu/asm/unistd_32.h
 /usr/include/x86_64-linux-gnu/asm/unistd_64.h
 
-### To turn ASLR on and off
+# Security options / configuration
 
-'''
+## To turn ASLR on and off
+
+```
 /proc/sys/kernel/randomize_va_space
-'''
+```
 
-0 = no randomization
-1 = conservative randomization.  shared libraries, stack, mmap(), and heap are randomized
-2 = full randomization
+* 0 = no randomization
+* 1 = conservative randomization.  shared libraries, stack, mmap(), and heap are randomized
+* 2 = full randomization
 
-### How to control stack cookies
+## How to control stack cookies
 
 Compile with -fno-stack-protector
 
-### How to control DEP (data execution prevention)
+## How to control DEP (data execution prevention)
 
 Compile with -z execstack
 
-### Intel vs ATT syntax
+# x86 Assembly Notes
+
+## Intel vs ATT syntax
 
 For gdb, set syntax:
-'''
+
+```
 set disassembly-flavor intel
-'''
+```
 
 ATT:
 
-mov %eax, %edx
-instruction source, dest
+* mov %eax, %edx
+* instruction source, dest
 
 Intel:
 
-mov edx, eax
-instruction dest, source
+* mov edx, eax
+* instruction dest, source
 
 Compare (Intel) goes left to right
 
@@ -62,11 +67,11 @@ if conditions are actually the opposite for assembly.  if (x>y) becomes cmp x, y
 (less than or equal).  Basically, if the condition fails, we are going to jump over the code in the
 if block.
 
-## Calling conventions
+# Calling conventions
 
 Recent GCC / Linux will force stack frames to be on 16-byte boundaries
 
-### cdecl
+## cdecl
 
 For C programming language:
 
@@ -75,27 +80,34 @@ For C programming language:
 * Floats are returned via STO
 * After the call returns, the caller removes the args from the stack (add sp, 4), and pops ebp
 
-### fastcall
+## fastcall
 
 For C programming language:
 
 * First arg passed via ECX, second arg passed via EDX, and rest of the args are pushed on stack 
   (right to left)
 
-### Unix/Linux/Mac AMD64
+## Unix/Linux/Mac AMD64
 
 * First 6 integer args are passed via registers:  rdi, rsi, rdx, rcx/r10, r8, r9.
 * Floats are passed via xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7
 * Additional args are passed on stack
 * Return value is stored in RAX and RDX
 
+## ARM (per wikipedia)
 
+* r15: Program counter (as per the instruction set specification).
+* r14: Link register. The BL instruction, used in a subroutine call, stores the return address in this register.
+* r13: Stack pointer. The Push/Pop instructions in "Thumb" operating mode use this register only.
+* r12: Intra-Procedure-call scratch register.
+* r4 to r11: Local variables.
+* r0 to r3: Argument values passed to a subroutine and results returned from a subroutine.
 
-## GDB Cheatsheet
+# GDB Cheatsheet
 
 set disassembly-flavor intel
 
-### Examine command
+## Examine command
 
 x/nfu
 * n = number of units
@@ -116,12 +128,12 @@ Units:
 * x with w = word (32-bit)
 * x with g = giant (64-bit)
 
-#### Examples
+### Examples
 
 * x/8xb $eip = examine 8 bytes at EIP address (in hex)
 * x/4xw addr = examine 4 32-bit words at address (in hex)
 
-### Controlling execution
+## Controlling execution
 
 * p / print = print out a variable (usually will smartly output structures and what not)
 * s / step = steps 1 line of code, including diving into functions
@@ -131,7 +143,7 @@ Units:
 * finish = continue execution until we leave this function
 * continue = detach debugger and let the code run
 
-### Stack stuff
+## Stack stuff
 
 * bt = backtrace
 * up = move debugger up 1 frame
@@ -140,41 +152,46 @@ Units:
 * info args = list function arg values
 * info locals = list local variables and values
 
-### Setting memory location
+## Setting memory location
 
+```
 set *((int *) 0xdeadbeef) = 0xf00dd00d
+```
 
-### Scripting a break point
+## Scripting a break point
 
+```
 break someFunc
 commands
   i r
 end
+```
 
 The commands command in GDB also has an argument.  If no arg passed, it assumes
 you are trying to script the last breakpoint added.  Otherwise, pass the
 breakpoint number of the breakpoint you are trying to script
 
-# GDB Custom Commands / Functions
+## GDB Custom Commands / Functions
 
 GDB functions / custom commands have an unlimited number of args
 
-Number of args passed
-
-  $argc
+Number of args passed: $argc
 
 Args themselves:
 
-  $arg0
-  $arg1
-  ... and so on
+* $arg0
+* $arg1
+* ... and so on
 
 GDB allows local internal variables (convenience variables)
 
-  set $myVar = 0x1234
+```
+set $myVar = 0x1234
+```
 
-# GDB function to print out wstrings
+## GDB function to print out wstrings
 
+```
 define printWString
 
   if $argc != 1
@@ -210,6 +227,7 @@ end
 document printQString
 Prints a QString data string using printWString
 end
+```
 
 # Installing IDA 6.95 on Linux
 
@@ -218,7 +236,7 @@ all of the Ida Pro menu options all squished together, and the drop down menus w
 
 As documented in the blog post: http://www.hexblog.com/?p=1048
 
-<code>
+```
 sudo dpkg --add-architecture i386
 sudo apt-get update
 sudo apt-get install libc6-i686:i386 libexpat1:i386 libffi6:i386 libfontconfig1:i386 libfreetype6:i386 libgcc1:i386 libglib2.0-0:i386 libice6:i386 libpcre3:i386 libpng12-0:i386 libsm6:i386 libstdc++6:i386 libuuid1:i386 libx11-6:i386 libxau6:i386 libxcb1:i386 libxdmcp6:i386 libxext6:i386 libxrender1:i386 zlib1g:i386 libx11-xcb1:i386 libdbus-1-3:i386 libxi6:i386 libsm6:i386 libcurl3:i386 
@@ -231,7 +249,7 @@ sudo apt-get install libc6-i686:i386 libexpat1:i386 libffi6:i386 libfontconfig1:
 # install the following:
 
 sudo apt-get install libgtk2.0-0:i386 gtk2-engines-murrine:i386 gtk2-engines-pixbuf:i386 libpango1.0-0:i386
-</code>
+```
 
 # Core Files
 
