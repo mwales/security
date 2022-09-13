@@ -170,23 +170,6 @@ screen that also indicated this.
 
 ![USB Mode](pics/usb_mode.jpg)
 
-
-
-Piano Keys, todo: where in binary did i figure this out? self test?
-
-* 9 = 0x100
-* 8 = 0x80
-* 7 = 0x40
-* 6 = 0x20
-* 5 = 0x10
-* 4 = 0x08
-* 3 = 0x04
-* 2 = 0x02
-* 1 = 0x01
-* 0 = 0x200
-
-
-
 # Firmware Dumping
 
 One of our co-workers told us that the we could dump the firmware with a tool
@@ -204,8 +187,6 @@ cd build
 cmake ..
 make
 ```
-
-[ ] todo: did i need to sudo install this?
 
 With the pico-sdk built, you could then build the picotool. 
 
@@ -273,36 +254,152 @@ dd if=/dev/zero of=zeros.bin bs=1K count=256
 cat flash.bin zeros.bin > flash_and_ram.bin
 ```
 
-I could then
-slice add a new memory segment to the memory map editor at offset 0x200000 in
+I could then add a new memory segment to the memory map editor at offset 0x200000 in
 the ROM image, and start it at address 0x20000000 of the memory space.  The
 first segment ends up with this memory too, but it doesn't seem to bother 
 anythind and I didn't see a way to resize the first segment.
 
 ![Binary Ninja Memory Map](pics/binja_memory_map.png)
 
-- [ ] todo: address offset
-- [ ] todo: weird references to 0x2000xxxx
-- [ ] binja slack, new dev channel version, section editor
-- [ ] sram + rom binary
-
 # Reversing tips
 
-* find where and how strings are used
-  * oled_print method
-  * assert fails
-  * challenge strings
-* understand global vars of importance
-* string sram buffers
-  * who writes them
-  * who reads them
+After opening the binary up, I wanted to look for what strings were used, and
+how are they used.  Around address 0x0x1000d500 you can find a lot of strings
+that are displayed on the screen in the tutorial and challenge screens.
 
-Almost tried to debug.  pico debugging tutorial...
+![ASCII Strings in the Binary](pics/strings.png)
+
+You can then infer that 0x1000503c is a oled_display(char* text, xcoord, ycoord,
+bool inversion).  I've used similar displays from Adafruit and this is a pretty
+standard sort of display routine you use a lot.  I was able to also reverse
+engineer a bunch of other functions as I dug down into how the display function
+worked:
+
+| Address    | Function        | Notes                        |
+| ---------- | --------------- | ---------------------------- |
+| 0x1000d500 | oled_display    | char*, x, y, inversion       |
+| 0x10004fc4 | oled_print_char | char, x, y, arg4unk          |
+| 0x10004e14 | turn_pixel_on   | x, y                         |
+| 0x10004eec | turn_pixel_off  | x, y                         |
+| 0x100050d8 | draw_vert_line  | x, yStart, yEnd              |
+| 0x10005074 | draw_rect       | xStart, yStart, xStop, yStop |
+| 0x100050a6 | clear_rect      | xStart, yStart, xStop, yStop |
+| 0x100050f6 | draw_horz_line  | xStart, xStop, y             |
+| 0x10005114 | clear_vert_line | x, yStart, yStop             |
+| 0x10005132 | clear_horz_line | xStart, xStop, y             |
+| 0x10005150 | draw_bitmap     | lots of em                   |
+
+The other function I found that used strings alot was some kind of assert
+failure function at 0x10007548.  The users of this function seemed to be at
+lower level code and this didn't seem to help my reversing efforts that much.
+
+With the oled_display function known, you can begin to figure out a bunch of the
+screens that pop up on the display based on what strings are displayed.
+
+The function that displays the "SELF TEST" string is great for reversing how the
+piano key presses are processed by the software.  The 16-bit word at 0x20026eea
+is where piano key bits are stored (maybe an interrupt sets the bits in the
+word.)  I didn't have to work out exactly where the hardware was read from.
+
+![Self Test Screen Code](pics/piano_keys_self_test.png)
 
 Keyboard:
 
- 2 4   7 9
-1 3 4 6 8 0
+```
+ 1 3   6 8 A
+0 2 4 5 7 9 B
+```
+
+## Solving Challenge 1
+
+Knowing what keys are pressed, and what screen displays the "YOU DID IT" and
+congratulates the user on completing a challenge. Binary Ninja only shows 1
+function that calls this function, leading us to the function that determines
+if the song has been entered for the first challenge.
+
+![Challenge Complete Screen](pics/chal_complete_screen.png)
+
+![Challege 1 Check Screen](pics/chal1_check_func.png)
+
+There is a buffer at 0x200063d8 that must get filled with characters to match
+the buffer of 0x2d characters at 0x1000dac8.  This buffer looks like the
+following in ASCII:
+
+```
+C@><>@C@><>@C@CE@EC@><C@><>@C@><>@>@C@CE@EGDB@
+```
+
+That mess of ascii is the following in hex:
+
+```
+C@><>@C@><>@C@CE@EC@><C@><>@C@><>@>@C@CE@EGDB@
+
+ 43 40 3e 3c 3e 40 43 40 3e 3c 3e 40 43 40 43 45  C@><>@C@><>@C@CE
+ 40 45 43 40 3e 3c 43 40 3e 3c 3e 40 43 40 3e 3c  @EC@><C@><>@C@><
+ 3e 40 3e 40 43 40 43 45 40 45 47 44 42 40        >@>@C@CE@EGDB@
+```
+
+By the time I had reversed this, somone had already told us what the song was
+when they solved it by combining all the defcon badges together.  Since I kinda
+generally knew what the notes were, I guessed this weird string had a mapping
+to piano keys like the following:
+
+12 face keys
+* octave 1 = 0x00 - 0x0b
+* octave 2 = 0x0c - 0x17
+* octave 3 = 0x18 - 0x23
+* octave 4 = 0x24 - 0x2f
+* octave 5 = 0x30 - 0x3b
+* octave 6 = 0x3c - 0x47
+
+That analysis ends up off by 1 octave.  Maybe the badge software didn't want to
+use value 0x0 or something?  The challenge solution has to be entered in using
+octave 4 (you change octaves on the play screen by pressing L and R).
+
+Disclaimer: I know nothing about music / octaves / notes.  This is just
+combining what more musically knowledgeable people told me with what I reversed
+out of the binary.
+
+The face keys of the keyboard (there are 12 keys)
+
+```
+C, C#, D, D#, E, F, F#, F, G#, A, A#, B
+```
+
+For the octave that all the keys are in, the keys would be.
+
+```
+C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+3C 3D  3E 3F  40 41 42  43 44  45 46  47
+```
+
+Replacing the hex with the keys for the keyboard
+
+```
+ G  E  D  C  D  E  G  E  D  C  D  E  G  E  G  A
+ E  A  G  E  D  C  G  E  D  C  D  E  G  E  D  C
+ D  E  D  E  G  E  G  A  E  A  B  G# F# E
+```
+
+or for easier keyboarding...
+
+```
+ G  E  D  C
+ D  E  G  E
+ D  C  D  E
+ G  E  G  A
+ E  A  G  E
+ D  C  G  E
+ D  C  D  E
+ G  E  D  C
+ D  E  D  E
+ G  E  G  A
+ E  A  B  G#
+ F# E
+```
+
+## Solving Challenge 2
+
 
 ```
 >>> badgenum = 3681949487
@@ -344,102 +441,4 @@ dmesg output generated from badge
 [1125812.851667] usb 1-4.1: Manufacturer: MK Factor
 [1125812.851668] usb 1-4.1: SerialNumber: E6619864DB76172F
 ```
-
-Notes for the original song / challenge 1:
-
-12 face keys
-* octave 1 = 0x00 - 0x0b
-* octave 2 = 0x0c - 0x17
-* octave 3 = 0x18 - 0x23
-* octave 4 = 0x24 - 0x2f
-* octave 5 = 0x30 - 0x3b
-* octave 6 = 0x3c - 0x47
-
-Hex String / Ascii string that is checked for completing challenge 1:
-
-```
-10002df0  void check_song_played_for_chal1(int32_t arg1)
-
-10002df0  {
-10002e02      for (int32_t r3 = 0; r3 <= 0x2c; r3 = (r3 + 1))
-10002df6      {
-10002dfc          *(int8_t*)(0x200063d8 + r3) = *(int8_t*)(r3 + 0x200063d9);
-10002dfa      }
-10002e08      g_num_elements_in_63d8_array = ((int8_t)arg1);
-10002e0a      int32_t r3_1 = 0;
-10002e0e      while (true)
-10002e0e      {
-10002e0e          if (r3_1 > 0x2d)
-10002e0c          {
-10002e24              g_chals_completed = 1;
-10002e26              uint32_t r6;
-10002e26              sub_10002218(r6);
-10002e2a              challenge_complete();
-10002e2a              break;
-10002e2a          }
-10002e1a          if (((uint32_t)*(int8_t*)(0x200063d8 + r3_1)) != ((uint32_t)*"C@><>@C@><>@C@CE@EC@><C@><>@C@><…"[r3_1]))
-10002e16          {
-10002e1a              break;
-10002e1a          }
-10002e1c          r3_1 = (r3_1 + 1);
-10002e1c      }
-10002e1c  }
-```
-
-That mess of ascii is the following in hex:
-
-```
-C@><>@C@><>@C@CE@EC@><C@><>@C@><>@>@C@CE@EGDB@
-
- 43 40 3e 3c 3e 40 43 40 3e 3c 3e 40 43 40 43 45  C@><>@C@><>@C@CE
- 40 45 43 40 3e 3c 43 40 3e 3c 3e 40 43 40 3e 3c  @EC@><C@><>@C@><
- 3e 40 3e 40 43 40 43 45 40 45 47 44 42 40        >@>@C@CE@EGDB@
-```
-
-
-
-The face keys of the keyboard (there are 12 keys)
-
-```
-C, C#, D, D#, E, F, F#, F, G#, A, A#, B
-```
-
-For the octave that all the keys are in, the keys would be.
-
-todo: i think the octave i used to key in song was octave 4, but when RE-ing,
-it would seem like it would have been octave 5...  dunno, someone told us the
-octave to use...
-
-```
-C, C#, D, D#, E, F, F#, G, G#, A, A#, B
-3C 3D  3E 3F  40 41 42  43 44  45 46  47
-```
-
-Replacing the hex with the keys for the keyboard
-
-```
- G  E  D  C  D  E  G  E  D  C  D  E  G  E  G  A
- E  A  G  E  D  C  G  E  D  C  D  E  G  E  D  C
- D  E  D  E  G  E  G  A  E  A  B  G# F# E
-```
-
-or for easier keyboarding...
-
-```
- G  E  D  C
- D  E  G  E
- D  C  D  E
- G  E  G  A
- E  A  G  E
- D  C  G  E
- D  C  D  E
- G  E  D  C
- D  E  D  E
- G  E  G  A
- E  A  B  G#
- F# E
-```
-
-
-
 
