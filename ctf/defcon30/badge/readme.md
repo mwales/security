@@ -400,6 +400,47 @@ or for easier keyboarding...
 
 ## Solving Challenge 2
 
+So now the challenge menu option will give you a screen that says to "Call
+Jenny", but the word JENNY is mirrored right to left.  We obviously tried to 
+call [Jenny](https://youtube.com/watch?v=6WTdTwcmxyo)'s number 867-5309, we
+to dial it backwards, we even tried to look up what would be Jenny's area code. 
+We even had people tell us that you had to enter the number in the tempo of the
+song...
+
+![Call Jenny](pics/call_ynnej.png)
+
+Getting nowhere, we turned back to the reverse engineering efforts and tried
+to see if we could find Jenny's number that way.  There was also an entry for
+"Friend" on the main menu, but it would say "You haven't contacted any friends
+yet. Maybe you should call someone."
+
+Since we had already reversed out the functions used to display things on the
+screen we quickly found all the functions that displayed things on the screen,
+and this challenge had a function at 0x100029bc, which I called call_jenny_mode.
+
+In this function there was a basically a giant switch statement that was adding
+ASCII digits to a char[11] buffer.  You could see that it would track how many
+digits were added to the buffer so far, and would display the buffer on the
+screen.  So that char[11] buffer at 0x200063c8 must be the phone number you are
+trying to call.
+
+![Dialing Phone Number Dissassembly](pics/dialing_phone_num.png)
+
+The function directly before this function looked really really suspicious as
+well.  It had all these conditional branches, and each branch would say you
+called a person.
+
+It had the following people listed:
+* Alice
+* Bob
+* Carol
+* Dan
+* Eve
+* Trever (Forget?)
+
+
+
+
 
 ```
 >>> badgenum = 3681949487
