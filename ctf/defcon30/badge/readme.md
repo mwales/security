@@ -438,40 +438,44 @@ It had the following people listed:
 * Eve
 * Trever (Forget?)
 
+We tried dialing the number in the conditional that didn't work.  Which should
+have been obvious, cause there was some stuff going on before the comparison.
 
+The first part of the check_phone_number function (address 0x100026c0) is to
+take the phone number the user entered and rotate the string left one digit.
 
+![check_phone_number function](pics/check_phone_number.png)
 
-
+Where...
 ```
->>> badgenum = 3681949487
->>> alice = badgenum ^ 2784639871
->>> print(alice)
-2123115600
->>> bob = badgenum ^ 0xe35c2742
->>> print(bob)
-942289005
->>> dan = 0x87e35d46 ^ badgenum
->>> print(dan)
-1553287785
->>> eve = badgenum ^ 0x5acd14f9
->>> print(eve)
-2176517078
->>> trevor = badgenum ^ 0xabde1fcf
->>> print(trevor)
-1890060512
+12345678
 ```
 
-From RP2040 manual.
- (I see addr + 0x1000 alot)
+would become
 
-Each peripheral register block is allocated 4kB of address space, with registers accessed using one of 4 methods,
-selected by address decode.
-* Addr + 0x0000 : normal read write access
-* Addr + 0x1000 : atomic XOR on write
-* Addr + 0x2000 : atomic bitmask set on write
-* Addr + 0x3000 : atomic bitmask clear on write
+```
+23456781
+```
 
-dmesg output generated from badge
+I thought the code was just doing some hand-coded memcpy, and just overlooked
+this.  Had I discerned this, I would have probably just tried this number XOR
+against the badge number that they show you on this screen, and would have
+completed this challenge a lot earlier than I did.  I tried these obvious things
+without rotating the number, which fails, which then led me to reverse engineer
+a bunch of other code before coming back to this section later (I was about to
+hook up an ARM hardware debugger and step through this troublsome code).
+
+I wasn't sure what function 0x1000d470 is, and I wasn't sure what was stored at
+address 0x200059e8.
+
+After reversing the usbIdDisplay function, I could tell that there was a string
+stored at 0x20005ba4, which the software displayed as the USB ID.  One of the
+boot modes will show this value, and you could see this value in lsusb and dmesg
+when had the badge was plugged into a Linux PC.
+
+![usbIdDisplay Function](pics/usbIdDisplayFunction.png)
+
+dmesg output generated from badge:
 
 ```
 [1125811.847556] usb 1-4.1: USB disconnect, device number 64
@@ -483,3 +487,49 @@ dmesg output generated from badge
 [1125812.851668] usb 1-4.1: SerialNumber: E6619864DB76172F
 ```
 
+When I followed the cross references for the address 0x200059e8 it brought me
+to function at address 0x10003ad0, that I called main_setup.  This funcion has
+a big while loop that calls all the other different mode functions that badge
+runs. After doing some reversing in this function and cross-referencing
+variabled, I was able to determine that 0x200059e8 is a UINT32 of the badge
+number, which is also the USB ID (just not displayed as hexadecimal)
+
+![main_seteup function](pics/main_setup_function.png)
+
+Going back to check_phone_number with everything reversed out, it's a lot easier
+to see what the function does.  The phone number you enter gets rotated (in base
+10), and then converted to an INT32 which is XOR against some hardcoded values
+for each of the contacts.
+
+![Check phone number reversed](pics/check_phone_better.png)
+
+So each of the phone numbers you have to enter (unrotated) are:
+
+```
+>>> badgenum = 3681949487   # This changes for each badge
+>>> alice = badgenum ^ 0xa5fa3b7f
+>>> print(alice)
+2123115600
+>>> bob = badgenum ^ 0xe35c2742
+>>> print(bob)
+942289005
+>>> carol = badgenum ^ 0xbec5ca0f
+>>> print(carol)
+1706286368
+>>> dan = badgenum ^ 0x87e35d46
+>>> print(dan)
+1553287785
+>>> eve = badgenum ^ 0x5acd14f9
+>>> print(eve)
+2176517078
+>>> trevor = badgenum ^ 0xabde1fcf
+>>> print(trevor)
+1890060512
+```
+
+## Badge Finished
+
+And now the contacts screen looks like the following with all the friends
+contacted:
+
+![Friends Unlocked](pics/friends.gif)
