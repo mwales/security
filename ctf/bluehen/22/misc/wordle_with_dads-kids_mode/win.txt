@@ -1,0 +1,19 @@
+nc 0.cloud.chals.io 29788
+Jokes are Upperclass.  Thanks to icanhazdadjoke.com!
+WELCOME TO DAD JOKE WORDLE: Your joke is 48 letters long. It starts with WH
+Guess? >
+WHEREDOESFONZIELIKETOGOFORLUNCHCHICKFILEYYYYYYYY
+{'correct': [0, 1], 'position': [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 16, 17, 19, 20, 21, 22, 25, 28, 29, 30, 32]} Guesses used: 1
+Guess? >
+WHATKINDOFAWARDDIDTHEDENTISTRECEIVEALITTLEPLAQUE
+{'correct': [0, 1, 2, 3, 27, 39, 41], 'position': [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 19, 20, 22, 23, 24, 26, 28, 29, 30, 35, 38, 42, 44]} Guesses used: 2
+Guess? >
+WHATCONCERTCOSTSONLYCENTSCENTFEATURINGNICKELBACK
+{'correct': [0, 1, 2, 3, 8, 12, 16, 30, 31], 'position': [4, 5, 6, 9, 10, 13, 14, 15, 17, 21, 22, 23, 24, 26, 28, 29, 32, 34, 35, 37, 39, 41, 44, 45]} Guesses used: 3
+Guess? >
+WHATDIDMICHAELJACKSONNAMEHISDENIMSTOREBILLYJEANS
+{'correct': [0, 1, 2, 3, 18, 24, 26, 33, 35], 'position': [4, 5, 6, 9, 10, 11, 12, 15, 17, 19, 20, 21, 22, 25, 27, 29, 30, 34, 36, 37, 38, 45, 47]} Guesses used: 4
+Guess? >
+WHATHAPPENSTOAFROGSCARWHENITBREAKSDOWNITGETSTOAD
+You win the flag is UDCTF{S000_iPh0n3_ch4rg3rs_c4ll_3m_APPLE_JU1C3!}
+
