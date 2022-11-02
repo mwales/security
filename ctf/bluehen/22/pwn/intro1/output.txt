@@ -1,0 +1,12 @@
+$ ./solve.py 
+Hello
+[+] Opening connection to 0.cloud.chals.io on port 19595: Done
+[*] Switching to interactive mode
+$ 
+$ ls
+flag.txt
+pwnme
+$ cat flag.txt
+UDCTF{ez_pz_but_we_all_start_somewhere}
+$  
+
