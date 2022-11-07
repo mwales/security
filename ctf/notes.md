@@ -41,6 +41,7 @@ Debian / Ubuntu have a forensics-all meta-package that has a large collection of
 ### Debugging
 
 - gdb-multiarch gdbserver gdb
+- gef
 
 ### Execution
 
@@ -73,6 +74,7 @@ Debian / Ubuntu have a forensics-all meta-package that has a large collection of
 ### Other
 
 - silversearcher-ag
+- Visual Studio Code (python debugging, markdown editor / preview)
 
 # Docker configuration crap
 
