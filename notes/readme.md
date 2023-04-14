@@ -265,3 +265,31 @@ sudo sysctl -w kernel.core_pattern=core
 
 And if you just want core dump of running application, check out gcore
 
+# QEMU ARM (or any other arch I imagine) plus chroot
+
+Run binary for a different architecture in a chroot jail, and debug using GDB and GEF.
+
+* Install qemu-user-static package so you get static linked versions of QEMU user mode binaries.  These can easily be run from your chroot
+* Setup your chroot directory
+** Extract a ramdisk or image
+** Copy over the .so files your binary needs (use ldd to list the other .so files)
+** Copy qemu-arm-static into the chroot
+** (Optional) Mount proc in the chroot:  sudo mount -t proc none chroot_dir/proc
+* Start your chroot:  sudo chroot chroot_dir
+* (Optional) export LD_LIBRARY_PATH=/path/to/so/files
+* qemu-arm-static -g 1234 ./binaryName
+
+In another window (where you want to debug)
+
+* Install GEF and GDB multiarch (gdb-multiarch)
+* Setup your ~/.gdbinit
+** soure /path/to/gef.py
+** set solib-search-path /path/to/library:/path/to/more/so/files
+** set sysroot /path/to/chroot_dir
+* Start gdb: gdb-multicarch ./binaryName
+* Normally would do: target remote localhost 1234
+* GEF alternative: gef-remote --qemu-user --qemu-binary ./binaryName localhost 1234
+
+
+
+
