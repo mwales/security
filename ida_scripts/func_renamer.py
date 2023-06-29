@@ -30,9 +30,9 @@ class RenameSelectionGui(object):
 		self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 		self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 		self.tableWidget.setRowCount(10)
-		self.tableWidget.setColumnCount(4)
+		self.tableWidget.setColumnCount(5)
 		self.tableWidget.setObjectName("tableWidget")
-		self.tableWidget.setHorizontalHeaderLabels(["Rename", "Address", "Current Name", "Suggested Name"])
+		self.tableWidget.setHorizontalHeaderLabels(["Rename", "Address", "Current Name", "Suggested Name", "Other Names"])
 		self.verticalLayout.addWidget(self.tableWidget)
 		self.horizontalLayout = QtWidgets.QHBoxLayout()
 		self.horizontalLayout.setObjectName("horizontalLayout")
@@ -61,7 +61,7 @@ class RenameSelectionGui(object):
 		Dialog.setWindowTitle(_translate("Dialog", "Rename Confirmation"))
 		self.pushButton.setText(_translate("Dialog", "Invert All"))
 
-	def addItem(self, address, curName, newName):
+	def addItem(self, address, curName, newName, otherNames):
 		rowInfo = []
 
 		# store internally important stuff to process later
@@ -69,6 +69,7 @@ class RenameSelectionGui(object):
 		rowInfo.append(cb)
 		rowInfo.append(address)
 		rowInfo.append(newName)
+		rowInfo.append(otherNames)
 
 		curRow = len(self.renameData)
 
@@ -81,6 +82,7 @@ class RenameSelectionGui(object):
 		self.tableWidget.setItem(curRow, 1, QtWidgets.QTableWidgetItem(hex(address)))
 		self.tableWidget.setItem(curRow, 2, QtWidgets.QTableWidgetItem(curName))
 		self.tableWidget.setItem(curRow, 3, QtWidgets.QTableWidgetItem(newName))
+		self.tableWidget.setItem(curRow, 4, QtWidgets.QTableWidgetItem(", ".join(otherNames)))
 
 		self.renameData.append(rowInfo)
 
@@ -156,20 +158,26 @@ def analyzeSingleArg(argText):
 		unkAddrHex = int(unkAddrText, 16)
 		#print("Decoding param ", unkAddrText, " to ", unkAddrHex)
 
-		fName = GetString(unkAddrHex)
+		fName = get_strlit_contents(unkAddrHex).decode("utf-8")
 		# Lookup the symbol and try to figure out what it is
 		retVal = fName
   
 	# If arg is just a base-10 number, then it is probably the address of a string
 	elif (argText.isdigit()):
 		memAddr = int(argText)
-		fName = GetString(memAddr)
-		retVal = fName
+		fNameBytes = get_strlit_contents(memAddr)
+		if (fNameBytes):
+			return fNameBytes.decode("utf-8")
+		else:
+			return ""
 
 	elif ( isHexString(argText) ):
 		memAddr = int(argText[2:], 16)
-		fName = GetString(memAddr)
-		retVal = fName
+		fNameBytes = get_strlit_contents(memAddr)
+		if (fNameBytes):
+			return fNameBytes.decode("utf-8")
+		else:
+			return ""
 	else:
 		return ""
 
@@ -185,7 +193,7 @@ def analyzeSingleCall(lineOfC, paramIndex):
 	endParen   = lineOfC.rfind(")")
 
 	if ((beginParen == -1) or (endParen == -1)):
-		print("Invalid function call format: {}".format(lineOfC))
+		print ("Invalid function call format: {}".format(lineOfC))
 		#print("Begin@", beginParen, " End@", endParen)
 		return ""
 	else:
@@ -236,13 +244,14 @@ def findFuncCalls(sourceText, functionName):
 				if (nextChar == '*'):
 					# Multi-line comment block!
 					commentTextEnd = sourceText.find('*/', curPos+2)
-				if (commentTextEnd == -1):
-					# print("Not parsing multi-line comment that terminates source: {}".format(sourceText[curPos:]))
-					return retVal
-				else:
-					commentText = sourceText[curPos : commentTextEnd + 2]
-					# print("Not parsing multi-line comment: {}".format(commentText))
-					curPos += len(commentText)
+					if (commentTextEnd == -1):
+						# print("Not parsing multi-line comment that terminates source: {}".format(sourceText[curPos:]))
+						return retVal
+					else:
+						commentText = sourceText[curPos : commentTextEnd + 2]
+						# print("Not parsing multi-line comment: {}".format(commentText))
+						curPos += len(commentText)
+
 					continue
       
 			# Add the character to the working string (don't add newlines!)
@@ -258,12 +267,12 @@ def findFuncCalls(sourceText, functionName):
 				parensBalance -= 1
 				# print("Found a parens closed, parensBalance = {}".format(parensBalance))
 
-		if (parensBalance == 0):
-			# This is the end of the function parameters!
-			print("Function call complete text: {}".format(curCallText))
-			retVal.append(curCallText)
-			curCallText = ""
-			break
+			if (parensBalance == 0):
+				# This is the end of the function parameters!
+				# print("Function call complete text: {}".format(curCallText))
+				retVal.append(curCallText)
+				curCallText = ""
+				break
 
 	return retVal
 
@@ -277,11 +286,11 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
 	possibleNameList = dict()
 
 	try:
-		c = ida_hexrays.decompile(startAddr)
+		c = ida_hexrays.decompile(startAddr, flags=ida_hexrays.DECOMP_NO_CACHE)
 	except ida_hexrays.DecompilationFailure:
 		print("Decompilation failure trying to decompile function at addr {}".format(hex(startAddr)))
-		return ""
-  
+		return "", []
+
 	for singleLine in findFuncCalls(str(c), searchString):
 		leftJustifiedLine = singleLine.lstrip()
 		if (leftJustifiedLine.startswith(searchString + "(")):
@@ -295,10 +304,10 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
 
 
 	if (len(possibleNameList) == 0):
-		print("No function names discovered for {}".format(ida_funcs.get_func_name(startAddr)))
-		return ""
+		print ("No function names discovered for {}".format(get_func_name(startAddr)))
+		return "", []
 
-	print("All possible function names discovered for {}:\n\t{}".format(ida_funcs.get_func_name(startAddr), "\n\t".join(possibleNameList)))
+	# print ("All possible function names discovered for {}:\n\t{}".format(get_func_name(startAddr), "\n\t".join(possibleNameList)))
 
 	numUses = 0
 	for fName in possibleNameList:
@@ -306,7 +315,10 @@ def analyzeSingleFunction(startAddr, endAddr, searchString, paramIndex):
 			numUses = possibleNameList[fName]
 			retVal = fName
 
-	return fName
+	# print("Poss Name List winner = {}, all = {}".format(retVal, possibleNameList))
+	possibleNameList.pop(retVal)
+
+	return retVal, list(possibleNameList.keys())
 
 def fixNameForIda(suggestedName):
 	# Look and see if the arg list is attached, if so, throw away
@@ -361,7 +373,19 @@ def deconflictName(suggestedName, discoveredNames):
 # ********************************************************************************
 
 traceFunc = choose_func("Function that is used for trace statements?")
-searchString = ida_funcs.get_func_name(traceFunc)
+searchString = get_func_name(traceFunc)
+
+demangle_name = idc.demangle_name(searchString, get_inf_attr(INF_SHORT_DN))
+
+if (demangle_name):
+	print("Demangle name: {}".format(demangle_name))
+	# Demangling did something, must have been a c++ call, remote parens
+	openParenPos = demangle_name.find('(')
+	searchString = demangle_name[:openParenPos]
+else:
+	print("Name demangling didn't work, assume it's a C function")
+
+print("Search for function {}".format(searchString))
 
 paramIndex = ida_kernwin.ask_long(1, "Which argument of the trace function is the function name (0, 1, 2, ...)?")
 if (paramIndex is None) or (paramIndex == 0xffffffff):
@@ -410,14 +434,15 @@ else:
 		#print ("Func start: ", hex(funcStartAddr), " and ends ", hex(func_end_addr), "name=", funcName)
 
 		if (funcName.startswith("sub_")):
-			suggestedName = analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
+			suggestedName, otherNames = analyzeSingleFunction(funcStartAddr, funcEndAddr, searchString, paramIndex)
+			print("{} suggested name = {}, with other names = {}".format(funcName, suggestedName, otherNames))
 
-			if (suggestedName != ""):
+			if ( suggestedName and (suggestedName != "")):
 				# A name has been suggest, but what if we have already discovered this name before, and more than one function
 				# have the same name.  We should just add a number on the end and find a name not taken yet
 				nonConflictName = deconflictName(suggestedName, funcList)
 				discoveredNames.append(nonConflictName)
-				ui.addItem(funcStartAddr, funcName, nonConflictName)
+				ui.addItem(funcStartAddr, funcName, nonConflictName, otherNames)
 				funcList.append(nonConflictName)
 
 	ui.adjustColumnWidths()
