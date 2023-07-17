@@ -290,6 +290,38 @@ In another window (where you want to debug)
 * Normally would do: target remote localhost 1234
 * GEF alternative: gef-remote --qemu-user --qemu-binary ./binaryName localhost 1234
 
+# Binary Ninja
 
+## Scripting Recipes
+
+Adding a structure programmatically.  This was an excerpt from a loader, self is probably
+normally just bv (binaryview) in normal circumstances.
+
+```
+vdp_type, vdp_type_name = self.parse_type_string("""
+            struct vdp __packed{
+                uint16_t data_port;
+                uint16_t data_port_mirror;
+                uint16_t contorl_port;
+                uint16_t contorl_port_mirror;
+                uint16_t hv_counter_0;
+                uint16_t hv_counter_1;
+                uint16_t hv_counter_2;
+                uint16_t hv_counter_3;
+                uint8_t padding_00;
+                uint16_t psg_0;
+                uint16_t psg_1;
+                uint16_t psg_2;
+                uint16_t psg_3;
+                uint8_t padding_19;
+                uint8_t padding_1a;
+                uint8_t padding_1b;
+                uint16_t debug_reg;
+                uint16_t debug_reg_mirror;
+            };
+        """)
+
+        self.define_user_type(vdp_type_name, vdp_type)
+```
 
 
