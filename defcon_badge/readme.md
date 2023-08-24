@@ -1,3 +1,10 @@
+# Badge and SAO Demo
+
+[![SAO Defcon30 Demo Video](badge_sao_thumb.png)](https://www.youtube.com/watch?v=9hUYpa1Kpdw)
+
+
+# Arduino Notes
+
 Downloaded and extracted arduino_cli from github
 
 https://github.com/arduino/arduino-cli/releases/download/0.25.1/arduino-cli_0.25.1_Linux_64bit.tar.gz
