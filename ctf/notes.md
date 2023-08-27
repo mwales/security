@@ -76,6 +76,20 @@ Debian / Ubuntu have a forensics-all meta-package that has a large collection of
 - silversearcher-ag
 - Visual Studio Code (python debugging, markdown editor / preview)
 
+# Pwntools / Stdin Buffering Issue
+
+Couldn't get some challenge to debug / work right when using it with pwntools
+in my Ubuntu 22.04 VM. Something to do with how stdin is buffered.
+
+```
+pty=process.PTY
+p = process(["challengefile"], stdin=pty, stdout=pty)
+```
+
+The syptom of the problem was calls to read would just hang forever if you
+tried to execute them from pwntools.
+
+
 # Docker configuration crap
 
 You probably need to run this after installing the docker package to get the
