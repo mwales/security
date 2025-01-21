@@ -5,6 +5,8 @@ ctf, binary utils, debugging, notes
 
 Various writeups
 
+* See outputJudge in utils folder for a utility for CTF challenge authors
+
 ## utils
 
 * aesSource : I implemented AES from source (and by lookup table).  Wanted a
@@ -30,6 +32,9 @@ Various writeups
 * largest_block_size : If you have a bunch of files and you want to find out
   what is the largest block size that all the files could be evenly divided
   with.  (I have no idea why I created this...)
+
+* outputJudge : Script that CTF challenge authors / or teachers can use
+  to give to students for them to evaluate their programs output.
 
 * ReverseCRC : Tool that will brute force determine all the possible CRC-8
   and CRC-16 seed values for an arbitrary blob of hexadecimal data.
