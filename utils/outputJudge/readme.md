@@ -78,4 +78,24 @@ Line 7: niner two niner
 $
 ```
 
+# How does this work
+
+For each line of the expected output, we strip off leading/trailing whitespace
+to help alleviate problems with Windows / Linux line ending differences. Then
+for each line we compute an expected sha256 sum of the text for that line.
+
+The verification script can then check each line to determine where the first
+line of output that is wrong to tell the user that need to check how that test
+case worked, or line of output was created.
+
+If the correct number of lines are present, and all of them are correct (pass
+the sha256 checksum verification), we create a sha512 checksum of the entire
+output together.  This checksum is used as a one-time-pad to encrypt and
+decrypt the secret flag.  If any single output character of the output was
+wrong, this step would decrypt to garbage, but we already know the output is
+correct because we checked each line.
+
+The rest of the challenge for this process is create a crafting script that
+helps automate all of this.  There is a script called the template, it is
+basically included as a base64 blob of text in the crafting script.
 
