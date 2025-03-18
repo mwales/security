@@ -71,6 +71,11 @@ Debian / Ubuntu have a forensics-all meta-package that has a large collection of
 - JD-GUI
 - Enigma
 
+### Common Python Libraries
+
+- python3-pil
+- python3-scapy
+
 ### Other
 
 - silversearcher-ag
