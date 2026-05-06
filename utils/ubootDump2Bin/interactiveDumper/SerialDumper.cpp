@@ -3,6 +3,7 @@
 #include <QList>
 #include <QMessageBox>
 #include <QtDebug>
+#include <QRegularExpression>
 #include "mainwindow.h"
 #include "crc32.h"
 
@@ -305,7 +306,7 @@ void SerialDumper::processSingleLineDumpData(QString dumpData)
 {
 	dumpData = dumpData.trimmed();
 	
-	QStringList tokens = dumpData.split(QRegExp("[: ]+"));
+    QStringList tokens = dumpData.split(QRegularExpression("[: ]+"));
 	// qDebug() << "Token List: " << tokens;
 	
 	// There needs to be 18 tokens: address, 16 bytes, ascii
@@ -369,7 +370,7 @@ void SerialDumper::processSingleLineCrcData(QString data)
 	
 	qDebug() << __PRETTY_FUNCTION__ << " called with: " << data;
 	
-	QStringList tokens = data.split(QRegExp("[: \\.=>]+"));
+    QStringList tokens = data.split(QRegularExpression("[: \\.=>]+"));
 	// qDebug() << "Token List: " << tokens;
 	
 	// Tokens should be "CRC32", "for", startAddr, endAddr, crc32Val
@@ -703,14 +704,8 @@ QString SerialDumper::serialPortErrorToString(QSerialPort::SerialPortError err)
 		return "OpenError";
 	case QSerialPort::NotOpenError:
 		return "Not Open Error";
-	case QSerialPort::ParityError:
-		return "Parity Error";
-	case QSerialPort::FramingError:
-		return "Framing Error";
-	case QSerialPort::BreakConditionError:
-		return "Break Condition Error";
-	case QSerialPort::WriteError:
-		return "Write Error";
+    case QSerialPort::WriteError:
+        return "Write Error";
 	case QSerialPort::ReadError:
 		return "Read Error";
 	case QSerialPort::ResourceError:

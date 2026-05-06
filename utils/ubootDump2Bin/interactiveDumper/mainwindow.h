@@ -7,7 +7,7 @@
 #include <QMap>
 #include <stdint.h>
 #include <QSerialPort>
-#include <QTime>
+#include <QElapsedTimer>
 
 namespace Ui {
 class MainWindow;
@@ -76,7 +76,7 @@ protected:
 	QMap<QString, QSerialPort::StopBits> theStopBitsMap;
 	QMap<QString, QSerialPort::Parity> theParityMap;
 	
-	QTime theDumpTimer;
+    QElapsedTimer theDumpTimer;
 };
 
 #endif // MAINWINDOW_H
